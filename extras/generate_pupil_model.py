@@ -184,6 +184,8 @@ if __name__ == "__main__":
         **dict(input_mask="NRM", out_fits=output_dir / "niriss_nrm_pupil.fits"),
         **base_dict,
     }
+    niriss_nrm_dict["symmetrize"] = False  # Never symmetrize: NRM is not symmetric
+    niriss_nrm_dict["hex_grid"] = False  # Never use hex grid for this one: not tested
     niriss_nrm_dict["min_red"] = 0.0
 
     nircam_clear_dict = {
