@@ -1,7 +1,12 @@
+"""
+Example script of how one can generate pupil models. This will be kept up to date to show
+how the current default model has been implemented.
+"""
 import warnings
 from pathlib import Path
 from typing import Optional, Union
 
+import matplotlib.pyplot as plt
 import numpy as np
 from astropy.io import fits
 from scipy.ndimage import rotate, shift
@@ -103,6 +108,8 @@ def generate_pupil_model(
     min_red: float = 10.0,
     hex_border: bool = True,
     hex_grid: bool = False,
+    show: bool = False,
+    out_plot: Optional[Union[Path, str]] = None,
     out_txt: Optional[Union[Path, str]] = None,
     out_fits: Optional[Union[Path, str]] = None,
 ):
@@ -142,6 +149,14 @@ def generate_pupil_model(
     KPI.filter_baselines(KPI.RED > min_red)
     KPI.package_as_fits(fname=out_fits)
 
+    if show or out_plot is not None:
+        _ = KPI.plot_pupil_and_uv(cmap="inferno")
+        if show:
+            plt.show(block=True)
+        if out_plot is not None:
+            plt.savefig(out_plot)
+        plt.close()
+
     return KPI
 
 
@@ -178,10 +193,3 @@ if __name__ == "__main__":
 
     for model in models:
         KPI = generate_pupil_model(**model)
-
-        # TODO: Add proper plots
-        # Plot pupil model.
-        import matplotlib.pyplot as plt
-        f = KPI.plot_pupil_and_uv(cmap="inferno")
-        plt.show(block=True)
-        plt.close()
