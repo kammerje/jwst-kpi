@@ -146,7 +146,8 @@ def generate_pupil_model(
 
     kpi_args = {**kpi_args, **dict(bmax=bmax, hexa=hex_border)}
     KPI = kpi.KPI(**kpi_args)
-    KPI.filter_baselines(KPI.RED > min_red)
+    if min_red > 0:
+        KPI.filter_baselines(KPI.RED > min_red)
     KPI.package_as_fits(fname=out_fits)
 
     if show or out_plot is not None:
@@ -183,6 +184,7 @@ if __name__ == "__main__":
         **dict(input_mask="NRM", out_fits=output_dir / "niriss_nrm_pupil.fits"),
         **base_dict,
     }
+    niriss_nrm_dict["min_red"] = 0.0
 
     nircam_clear_dict = {
         **dict(input_mask="CLEAR", out_fits=output_dir / "nircam_clear_pupil.fits"),
