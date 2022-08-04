@@ -1,6 +1,6 @@
 from pkg_resources import get_distribution, DistributionNotFound
 
-from jwst_kernel import pupil_data
+from jwst_kpi import pupil_data
 
 try:
     __version__ = get_distribution(__name__).version  # get version from setup

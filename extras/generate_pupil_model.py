@@ -7,7 +7,7 @@ from astropy.io import fits
 from scipy.ndimage import rotate, shift
 from xara import create_discrete_model, hexagon, kpi, symetrizes_model
 
-from jwst_kernel import PUPIL_DIR
+from jwst_kpi import PUPIL_DIR
 
 
 # TODO: Add step and binary parameters
@@ -87,6 +87,8 @@ def create_hex_model(aper, pxsc):
             model += [[xy_all[i, 0], xy_all[i, 1], tt]]
     model = np.array(model)
 
+    return model
+
 
 # TODO: Add docstring
 def generate_pupil_model(
@@ -153,6 +155,8 @@ if __name__ == "__main__":
         symmetrize=True,
         bmax=None,
         hex_border=True,
+        hex_grid=True,  # For hex
+        min_red=2,  # For hex
     )
 
     niriss_clearp_dict = {
@@ -173,11 +177,11 @@ if __name__ == "__main__":
     models = [niriss_clearp_dict, niriss_nrm_dict, nircam_clear_dict]
 
     for model in models:
-        generate_pupil_model(**model)
+        KPI = generate_pupil_model(**model)
 
-    # TODO: Add proper plots
-    # # Plot pupil model.
-    # import matplotlib.pyplot as plt
-    # f = KPI.plot_pupil_and_uv(cmap="inferno")
-    # plt.show(block=True)
-    # plt.close()
+        # TODO: Add proper plots
+        # Plot pupil model.
+        import matplotlib.pyplot as plt
+        f = KPI.plot_pupil_and_uv(cmap="inferno")
+        plt.show(block=True)
+        plt.close()
