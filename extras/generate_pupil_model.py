@@ -171,8 +171,8 @@ if __name__ == "__main__":
         symmetrize=True,
         bmax=None,
         hex_border=True,
-        hex_grid=True,  # For hex
-        min_red=2,  # For hex
+        # hex_grid=True,  # For hex CLEARP and CLEAR
+        # min_red=2,  # For hex CLEARP
     )
 
     niriss_clearp_dict = {
