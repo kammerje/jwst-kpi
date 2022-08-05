@@ -16,6 +16,8 @@ from jwst_kpi import PUPIL_DIR
 
 
 # TODO: Add step and binary parameters
+# TODO: Add docstrings
+# TODO: Use function from Frantz used for model in paper
 def create_hex_model(aper, pxsc):
     d_hex = 1.32  # m; short diagonal of an individual mirror segment
     D_hex = (
@@ -95,7 +97,6 @@ def create_hex_model(aper, pxsc):
     return model
 
 
-# TODO: Add docstring
 def generate_pupil_model(
     input_mask: Union[Path, str],
     step: float,
@@ -113,6 +114,51 @@ def generate_pupil_model(
     out_txt: Optional[Union[Path, str]] = None,
     out_fits: Optional[Union[Path, str]] = None,
 ):
+    """
+    Generate pupil model for a set of parameters with XARA
+
+    This function is used to gereate XARA pupil model from higher-resolution FITS
+    mask of the pupil (such as those in WebbPSF). It shows how the default models
+    have been generated and enables users to easily define their own.
+
+    Parameters
+    ----------
+    input_mask : Union[Path, str]
+        Input FITS mask to use.
+    step : float
+        Step size of the mask (used only for square grid, ignored for hex)
+    tmin : float
+        Minimum transmission to keep in the mask
+    binary : bool
+        Whether the model should be binary (True) or grey (False)
+    symmetrize : bool
+        Symmetrize the pupil model along horizontal direction
+    cut : float
+        Cutoff distance when symmetrizing model (must be < step size)
+    rot_ang : float
+        Rotation angle for pupil (applied to aperture from input FITS mask)
+    bmax : float
+        Max baseline kept in pupil model (to avoid baselines outside of actual pupil)
+    min_red : float
+        Minium redundancy kept in pupil model (to avoid edge baselines that are not really in the pupil)
+    hex_border : bool
+        Hexagongal border filtering for baselines
+    hex_grid : bool
+        Use hexagonal grid for sub-apertures
+    show : bool
+        Show pupil model and U-V coverage
+    out_plot : Optional[Union[Path, str]]
+        Output path for pupil model plot
+    out_txt : Optional[Union[Path, str]]
+        Output path for pupil model text file (this does not include all the information in the model as some is saved in KPI object)
+    out_fits : Optional[Union[Path, str]]
+        Output fits file for the KPI object defined for the pupil model
+
+    Returns
+    -------
+    KPI : xara.kpi.KPI
+        Xara KPI object used to define the pupil model.
+    """
 
     pupil_dir = Path(PUPIL_DIR)
     available_masks = [
@@ -162,7 +208,11 @@ def generate_pupil_model(
 
 
 if __name__ == "__main__":
-    output_dir = Path("extras/pupil_results/")
+
+    # Where should we save pupil model
+    output_dir = Path("pupil_results/")
+    if not output_dir.is_dir():
+        output_dir.mkdir()
 
     base_dict = dict(
         step=0.3,
@@ -171,6 +221,7 @@ if __name__ == "__main__":
         symmetrize=True,
         bmax=None,
         hex_border=True,
+        show=True,
         # hex_grid=True,  # For hex CLEARP and CLEAR
         # min_red=2,  # For hex CLEARP
     )
@@ -192,6 +243,7 @@ if __name__ == "__main__":
         **dict(input_mask="CLEAR", out_fits=output_dir / "nircam_clear_pupil.fits"),
         **base_dict,
     }
+    print(niriss_nrm_dict["min_red"])
 
     models = [niriss_clearp_dict, niriss_nrm_dict, nircam_clear_dict]
 
