@@ -323,6 +323,7 @@ class recenter_frames:
         self.crop = False
         self.bmax = 6.0  # m
         self.pupil_path = None
+        self.verbose = False
 
     def step(self, file, suffix, output_dir, show_plots=False):
         """
@@ -484,7 +485,8 @@ class recenter_frames:
                     bmax=self.bmax,
                 )
 
-                print("Image shift = (%.2f, %.2f)" % (dx, dy))
+                if self.verbose:
+                    print("Image shift = (%.2f, %.2f)" % (dx, dy))
             else:
                 data_recentered = []
                 dx = []
@@ -1102,7 +1104,8 @@ class extract_kerphase:
                     )
                     erro_recentered += [temp]
 
-                    print("Image shift = (%.2f, %.2f)" % (dx[i], dy[i]))
+                    if self.verbose:
+                        print("Image shift = (%.2f, %.2f)" % (dx[i], dy[i]))
                 data_recentered = np.array(data_recentered)
                 erro_recentered = np.array(erro_recentered)
 
