@@ -25,7 +25,8 @@ source <env-name>/bin/activate
 
 ### Install jwst-kpi
 
-<!-- TODO: Update path to Jens' repo -->
+<!-- TODO: Update KPI3 to Kpi3 when this change is pushed -->
+
 
 To install the jwst `KPI3Pipeline` in your new virtual environment, you can either clone and install locally:
 
