@@ -129,4 +129,5 @@ dmypy.json
 .pyre/
 
 # Ignore example output files
-extras/pupil_results/
+examples/pupil_results/
+examples/kerphase_testdata/
