@@ -17,6 +17,7 @@ from scipy.ndimage import median_filter
 from xara import core, kpo
 
 from . import utils as ut
+from . import PUPIL_DIR
 
 # http://svo2.cab.inta-csic.es/theory/fps/
 wave_nircam = {"F212N": 2.121193}  # micron
@@ -410,25 +411,17 @@ class recenter_frames:
                 raise UserWarning("Unknown filter")
 
             # Get pupil model path and filter effective wavelength and width.
-            # TODO: Update pupil paths to use internal package data
+            # TODO: This block is repeated in many places: move to function
             if INSTRUME == "NIRCAM":
                 if self.pupil_path is None:
-                    self.pupil_path = "nircam_clear_pupil.fits"
-                fname = os.path.join(sys.prefix, "xara_jwst_pupils", self.pupil_path)
-                if not os.path.exists(fname):
-                    path = os.path.realpath(__file__)
-                    temp = path.rfind("/")
-                    fname = path[:temp] + "/../jwst/" + self.pupil_path
+                    default_pupil = "nircam_clear_pupil.fits"
+                    self.pupil_path = os.path.join(PUPIL_DIR, default_pupil)
                 wave = wave_nircam[FILTER] * 1e-6  # m
                 weff = weff_nircam[FILTER] * 1e-6  # m
             elif INSTRUME == "NIRISS":
                 if self.pupil_path is None:
-                    self.pupil_path = "niriss_clear_pupil.fits"
-                fname = os.path.join(sys.prefix, "xara_jwst_pupils", self.pupil_path)
-                if not os.path.exists(fname):
-                    path = os.path.realpath(__file__)
-                    temp = path.rfind("/")
-                    fname = path[:temp] + "/../jwst/" + self.pupil_path
+                    default_pupil = "niriss_clear_pupil.fits"
+                    self.pupil_path = os.path.join(PUPIL_DIR, default_pupil)
                 wave = wave_niriss[FILTER] * 1e-6  # m
                 weff = weff_niriss[FILTER] * 1e-6  # m
 
@@ -452,7 +445,7 @@ class recenter_frames:
 
             # Load pupil model.
             KPO = kpo.KPO(
-                fname=fname, array=None, ndgt=5, bmax=self.bmax, hexa=True, ID=""
+                fname=self.pupil_path, array=None, ndgt=5, bmax=self.bmax, hexa=True, ID=""
             )
             m2pix = core.mas2rad(PSCALE) * sx / wave
 
@@ -948,22 +941,14 @@ class extract_kerphase:
         # Get pupil model path and filter effective wavelength and width.
         if INSTRUME == "NIRCAM":
             if self.pupil_path is None:
-                self.pupil_path = "nircam_clear_pupil.fits"
-            fname = os.path.join(sys.prefix, "xara_jwst_pupils", self.pupil_path)
-            if not os.path.exists(fname):
-                path = os.path.realpath(__file__)
-                temp = path.rfind("/")
-                fname = path[:temp] + "/../jwst/" + self.pupil_path
+                default_pupil = "nircam_clear_pupil.fits"
+                self.pupil_path = os.path.join(PUPIL_DIR, default_pupil)
             wave = wave_nircam[FILTER] * 1e-6  # m
             weff = weff_nircam[FILTER] * 1e-6  # m
         elif INSTRUME == "NIRISS":
             if self.pupil_path is None:
-                self.pupil_path = "niriss_clear_pupil.fits"
-            fname = os.path.join(sys.prefix, "xara_jwst_pupils", self.pupil_path)
-            if not os.path.exists(fname):
-                path = os.path.realpath(__file__)
-                temp = path.rfind("/")
-                fname = path[:temp] + "/../jwst/" + self.pupil_path
+                default_pupil = "niriss_clear_pupil.fits"
+                self.pupil_path = os.path.join(PUPIL_DIR, default_pupil)
             wave = wave_niriss[FILTER] * 1e-6  # m
             weff = weff_niriss[FILTER] * 1e-6  # m
 
@@ -986,7 +971,7 @@ class extract_kerphase:
         # txtfile.close()
 
         # Load pupil model.
-        KPO = kpo.KPO(fname=fname, array=None, ndgt=5, bmax=self.bmax, hexa=True, ID="")
+        KPO = kpo.KPO(fname=self.pupil_path, array=None, ndgt=5, bmax=self.bmax, hexa=True, ID="")
 
         # Re-center, window, and extract kernel-phase.
         if not window_frames_obj.skip:
