@@ -522,7 +522,8 @@ class recenter_frames:
                     )
                     erro_recentered += [temp]
 
-                    print("Image shift = (%.2f, %.2f)" % (dx[-1], dy[-1]))
+                    if self.verbose:
+                        print("Image shift = (%.2f, %.2f)" % (dx[-1], dy[-1]))
                 data_recentered = np.array(data_recentered)
                 erro_recentered = np.array(erro_recentered)
 
@@ -843,6 +844,7 @@ class extract_kerphase:
         self.instrume_allowed = ["NIRCAM", "NIRISS"]
         self.bmax = None  # m
         self.pupil_path = None
+        self.verbose = False
 
     def step(
         self,
