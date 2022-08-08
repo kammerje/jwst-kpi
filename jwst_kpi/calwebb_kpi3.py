@@ -539,9 +539,9 @@ class recenter_frames:
             plt.ioff()
             f, ax = plt.subplots(2, 2, figsize=(1.5 * 6.4, 1.5 * 4.8))
             if data.ndim == 2:
-                p00 = ax[0, 0].imshow(data, origin="lower")
+                p00 = ax[0, 0].imshow(np.log10(np.abs(data)), origin="lower")
             else:
-                p00 = ax[0, 0].imshow(data[0], origin="lower")
+                p00 = ax[0, 0].imshow(np.log10(np.abs(data[0])), origin="lower")
             plt.colorbar(p00, ax=ax[0, 0])
             if data.ndim == 2:
                 ax[0, 0].axhline(sy // 2 + dy, color="red")
@@ -573,15 +573,17 @@ class recenter_frames:
                 [PathEffects.withStroke(linewidth=3, foreground="black")]
             )
             ax[0, 0].set_title(
-                "Full frame (original)",
+                "Full frame (log-scale)",
                 y=1.0,
                 pad=-20,
                 bbox=dict(facecolor="white", edgecolor="lightgrey", boxstyle="round"),
             )
             if data.ndim == 2:
-                p01 = ax[0, 1].imshow(data_recentered, origin="lower")
+                p01 = ax[0, 1].imshow(np.log10(np.abs(data_recentered)), origin="lower")
             else:
-                p01 = ax[0, 1].imshow(data_recentered[0], origin="lower")
+                p01 = ax[0, 1].imshow(
+                    np.log10(np.abs(data_recentered[0])), origin="lower"
+                )
             plt.colorbar(p01, ax=ax[0, 1])
             ax[0, 1].axhline(sy // 2, color="red")
             ax[0, 1].axvline(sx // 2, color="red")
@@ -1121,9 +1123,9 @@ class extract_kerphase:
                 plt.ioff()
                 f, ax = plt.subplots(2, 2, figsize=(1.5 * 6.4, 1.5 * 4.8))
                 if data.ndim == 2:
-                    p00 = ax[0, 0].imshow(data, origin="lower")
+                    p00 = ax[0, 0].imshow(np.log10(np.abs(data)), origin="lower")
                 else:
-                    p00 = ax[0, 0].imshow(data[0], origin="lower")
+                    p00 = ax[0, 0].imshow(np.log10(np.abs(data[0])), origin="lower")
                 plt.colorbar(p00, ax=ax[0, 0])
                 if data.ndim == 2:
                     ax[0, 0].axhline(sy // 2 + dy, color="red")
@@ -1155,7 +1157,7 @@ class extract_kerphase:
                     [PathEffects.withStroke(linewidth=3, foreground="black")]
                 )
                 ax[0, 0].set_title(
-                    "Full frame (original)",
+                    "Full frame (log-scale)",
                     y=1.0,
                     pad=-20,
                     bbox=dict(
@@ -1163,9 +1165,13 @@ class extract_kerphase:
                     ),
                 )
                 if data.ndim == 2:
-                    p01 = ax[0, 1].imshow(data_recentered, origin="lower")
+                    p01 = ax[0, 1].imshow(
+                        np.log10(np.abs(data_recentered)), origin="lower"
+                    )
                 else:
-                    p01 = ax[0, 1].imshow(data_recentered[0], origin="lower")
+                    p01 = ax[0, 1].imshow(
+                        np.log10(np.abs(data_recentered[0])), origin="lower"
+                    )
                 plt.colorbar(p01, ax=ax[0, 1])
                 ax[0, 1].axhline(sy // 2, color="red")
                 ax[0, 1].axvline(sx // 2, color="red")
