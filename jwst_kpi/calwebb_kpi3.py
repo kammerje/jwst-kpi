@@ -1,5 +1,5 @@
 """
-JWST stage 3 pipeline for kernel-phase imaging.
+JWST stage 3 pipeline for kernel phase imaging.
 
 Authors: Jens Kammerer
 Supported instruments: NIRCam, NIRISS
@@ -51,10 +51,10 @@ gain = {"NIRCAM_SHORT": 2.05, "NIRCAM_LONG": 1.82, "NIRISS": 1.61}  # e-/ADU
 
 class KPI3Pipeline:
     """
-    JWST stage 3 pipeline for kernel-phase imaging.
+    JWST stage 3 pipeline for kernel phase imaging.
 
     ..Notes:: AMI skips ipc, photom, and resample steps in stage 1 & 2
-              pipelines. Kernel-phase should also skip these steps.
+              pipelines. Kernel phase should also skip these steps.
     """
 
     def __init__(self):
@@ -825,10 +825,10 @@ class window_frames:
 
 class extract_kerphase:
     """
-    Extract the kernel-phase while re-centering in complex visibility space.
+    Extract the kernel phase while re-centering in complex visibility space.
 
     The KPFITS file structure has been agreed upon by the participants of
-    Steph Sallum's masking & kernel-phase hackathon in 2021 and is defined
+    Steph Sallum's masking & kernel phase hackathon in 2021 and is defined
     here:
         https://docs.google.com/document/d/1iBbcCYiq9J2PpLSr21-xB4AXP8X_6tSszxnHY1VDGXg/edit?usp=sharing
     """
@@ -977,7 +977,7 @@ class extract_kerphase:
         # Load pupil model.
         KPO = kpo.KPO(fname=self.pupil_path, array=None, ndgt=5, bmax=self.bmax, hexa=True, ID="")
 
-        # Re-center, window, and extract kernel-phase.
+        # Re-center, window, and extract kernel phase.
         if not window_frames_obj.skip:
             wrad = window_frames_obj.wrad  # pix
             if wrad is None:
@@ -1384,7 +1384,7 @@ class extract_kerphase:
             data_windowed = data_recentered.copy()
             erro_windowed = erro_recentered.copy()
 
-        # Extract kernel-phase covariance.
+        # Extract kernel phase covariance.
         if data.ndim == 2:
             frame = data_windowed.copy()
             varframe = erro_windowed.copy() ** 2
@@ -1451,7 +1451,7 @@ class extract_kerphase:
             c01 = plt.colorbar(p01, ax=ax[0, 1])
             c01.set_label("Correlation", rotation=270, labelpad=20)
             ax[0, 1].set_title(
-                "Kernel-phase correlation",
+                "Kernel phase correlation",
                 y=1.0,
                 pad=-20,
                 bbox=dict(facecolor="white", edgecolor="lightgrey", boxstyle="round"),
@@ -1495,9 +1495,9 @@ class extract_kerphase:
             ax[1, 1].set_ylim([-np.max(ylim), np.max(ylim)])
             ax[1, 1].grid(axis="y")
             ax[1, 1].set_xlabel("Index")
-            ax[1, 1].set_ylabel("Kernel-phase [rad]")
+            ax[1, 1].set_ylabel("Kernel phase [rad]")
             ax[1, 1].set_title(
-                "Kernel-phase",
+                "Kernel phase",
                 y=1.0,
                 pad=-20,
                 bbox=dict(facecolor="white", edgecolor="lightgrey", boxstyle="round"),
@@ -1610,7 +1610,7 @@ class extract_kerphase:
 
 class empirical_uncertainties:
     """
-    Compute empirical uncertainties for the kernel-phase.
+    Compute empirical uncertainties for the kernel phase.
     """
 
     def __init__(self):
@@ -1708,7 +1708,7 @@ class empirical_uncertainties:
                 emcor[0, 0], origin="lower", cmap="RdBu", vmin=-1.0, vmax=1.0
             )
             c00 = plt.colorbar(p00, ax=ax)
-            c00.set_label("Kernel-phase correlation", rotation=270, labelpad=20)
+            c00.set_label("Kernel phase correlation", rotation=270, labelpad=20)
             ax.set_title(
                 "Theoretical estimate",
                 y=1.0,
@@ -1720,7 +1720,7 @@ class empirical_uncertainties:
                 emcor_sample[0, 0], origin="lower", cmap="RdBu", vmin=-1.0, vmax=1.0
             )
             c01 = plt.colorbar(p01, ax=ax)
-            c01.set_label("Kernel-phase correlation", rotation=270, labelpad=20)
+            c01.set_label("Kernel phase correlation", rotation=270, labelpad=20)
             ax.set_title(
                 "Empirical estimate",
                 y=1.0,
@@ -1758,7 +1758,7 @@ class empirical_uncertainties:
             ax.set_ylim([-np.max(ylim), np.max(ylim)])
             ax.grid(axis="y")
             ax.set_xlabel("Index")
-            ax.set_ylabel("Kernel-phase [rad]")
+            ax.set_ylabel("Kernel phase [rad]")
             ax.legend(loc="upper right")
             plt.suptitle("Empirical uncertainties step", size=18)
             plt.tight_layout()
