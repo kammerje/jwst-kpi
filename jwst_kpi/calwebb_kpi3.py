@@ -450,7 +450,12 @@ class recenter_frames:
 
             # Load pupil model.
             KPO = kpo.KPO(
-                fname=self.pupil_path, array=None, ndgt=5, bmax=self.bmax, hexa=True, ID=""
+                fname=self.pupil_path,
+                array=None,
+                ndgt=5,
+                bmax=self.bmax,
+                hexa=True,
+                ID="",
             )
             m2pix = core.mas2rad(PSCALE) * sx / wave
 
@@ -989,7 +994,9 @@ class extract_kerphase:
         # txtfile.close()
 
         # Load pupil model.
-        KPO = kpo.KPO(fname=self.pupil_path, array=None, ndgt=5, bmax=self.bmax, hexa=True, ID="")
+        KPO = kpo.KPO(
+            fname=self.pupil_path, array=None, ndgt=5, bmax=self.bmax, hexa=True, ID=""
+        )
 
         # Re-center, window, and extract kernel phase.
         if not window_frames_obj.skip:

@@ -1,4 +1,4 @@
-from pkg_resources import get_distribution, DistributionNotFound
+from pkg_resources import DistributionNotFound, get_distribution
 
 from .calwebb_kpi3 import Kpi3Pipeline, PUPIL_DIR
 
