@@ -126,7 +126,7 @@ class fix_bad_pixels:
     """
     Fix bad pixels.
 
-    References for the KI method:
+    References for the Fourier (KI) method:
         https://ui.adsabs.harvard.edu/abs/2019MNRAS.486..639K/abstract
         https://ui.adsabs.harvard.edu/abs/2013MNRAS.433.1718I/abstract
     """
@@ -142,7 +142,7 @@ class fix_bad_pixels:
         self.bad_bits = ["DO_NOT_USE"]
         self.bad_bits_allowed = pxdq_flags.keys()
         self.method = "medfilt"
-        self.method_allowed = ["medfilt", "KI"]
+        self.method_allowed = ["medfilt", "fourier"]
 
     def step(self, file, suffix, output_dir, show_plots=False):
         """
@@ -211,8 +211,10 @@ class fix_bad_pixels:
                         erro_bpfixed[i][mask[i]] = median_filter(
                             erro_bpfixed[i], size=5
                         )[mask[i]]
-            elif self.method == "KI":
-                raise UserWarning("Not implemented yet")
+            elif self.method == "fourier":
+                raise NotImplementedError(
+                    "Fourier-plane bad pixel correction not implemented yet."
+                )
 
         # Find output file path.
         path = ut.get_output_base(file, output_dir=output_dir)
