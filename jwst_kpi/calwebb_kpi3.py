@@ -324,7 +324,7 @@ class recenter_frames:
         self.method = "FPNM"
         self.method_allowed = ["BCEN", "COGI", "FPNM"]
         self.instrume_allowed = ["NIRCAM", "NIRISS"]
-        self.crop = False
+        self.trim = True
         self.bmax = 6.0  # m
         self.pupil_path = None
         self.verbose = False
@@ -354,12 +354,12 @@ class recenter_frames:
         FILTER = hdul[0].header["FILTER"]
 
         # Copied from bad pixel cleaning script.
-        if self.crop:
+        if self.trim:
             if INSTRUME != "NIRISS":
-                raise NotImplementedError("Cropping is implemented for NIRISS only")
+                raise NotImplementedError("Trimming is implemented for NIRISS only")
             if data.ndim != 3:
                 raise NotImplementedError(
-                    "Cropping is implemented for 3D data cube only"
+                    "Trimming is implemented for 3D data cube only"
                 )
             ww_max = []
             for i in range(data.shape[0]):
@@ -375,7 +375,7 @@ class recenter_frames:
             xh = min(sx - np.max(ww_max[:, 1]), np.min(ww_max[:, 1]) - 0)
             sh = min(xh, yh)
 
-            print("Cropping all frames to %.0fx%.0f pixels" % (2 * sh, 2 * sh))
+            print("Trimming all frames to %.0fx%.0f pixels" % (2 * sh, 2 * sh))
             data = data[
                 :,
                 ww_max[i, 0] - sh : ww_max[i, 0] + sh,
@@ -889,12 +889,12 @@ class extract_kerphase:
         FILTER = hdul[0].header["FILTER"]
 
         # Copied from bad pixel cleaning script.
-        if recenter_frames_obj.crop:
+        if recenter_frames_obj.trim:
             if INSTRUME != "NIRISS":
-                raise NotImplementedError("Cropping is implemented for NIRISS only")
+                raise NotImplementedError("Trimming is implemented for NIRISS only")
             if data.ndim != 3:
                 raise NotImplementedError(
-                    "Cropping is implemented for 3D data cube only"
+                    "Trimming is implemented for 3D data cube only"
                 )
             ww_max = []
             for i in range(data.shape[0]):
@@ -910,7 +910,7 @@ class extract_kerphase:
             xh = min(sx - np.max(ww_max[:, 1]), np.min(ww_max[:, 1]) - 0)
             sh = min(xh, yh)
 
-            print("Cropping all frames to %.0fx%.0f pixels" % (2 * sh, 2 * sh))
+            print("Trimming all frames to %.0fx%.0f pixels" % (2 * sh, 2 * sh))
             data = data[
                 :,
                 ww_max[i, 0] - sh : ww_max[i, 0] + sh,
