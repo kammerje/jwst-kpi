@@ -777,6 +777,14 @@ class window_frames:
                     vmax=vmax,
                 )
             plt.colorbar(p1, ax=ax[1])
+            cc = plt.Circle(
+                (data_windowed.shape[2] // 2, data_windowed.shape[1] // 2),
+                wrad,
+                color="red",
+                ls="--",
+                fill=False,
+            )
+            ax[1].add_patch(cc)
             t1 = ax[1].text(
                 0.01,
                 0.01,
@@ -1343,6 +1351,14 @@ class extract_kerphase:
                         vmax=vmax,
                     )
                 plt.colorbar(p1, ax=ax[1])
+                cc = plt.Circle(
+                    (data_windowed.shape[2] // 2, data_windowed.shape[1] // 2),
+                    wrad,
+                    color="red",
+                    ls="--",
+                    fill=False,
+                )
+                ax[1].add_patch(cc)
                 t1 = ax[1].text(
                     0.01,
                     0.01,
