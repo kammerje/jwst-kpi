@@ -16,7 +16,10 @@ from scipy.ndimage import median_filter
 from xara import core, kpo
 
 from . import utils as ut
-from . import PUPIL_DIR
+from . import pupil_data
+
+
+PUPIL_DIR = pupil_data.__path__[0]
 
 # http://svo2.cab.inta-csic.es/theory/fps/
 wave_nircam = {"F212N": 2.121193}  # micron
