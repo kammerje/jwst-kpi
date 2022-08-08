@@ -1,7 +1,7 @@
 """
 JWST stage 3 pipeline for kernel phase imaging.
 
-Authors: Jens Kammerer
+Authors: Jens Kammerer, Thomas Vandal
 Supported instruments: NIRCam, NIRISS
 """
 
