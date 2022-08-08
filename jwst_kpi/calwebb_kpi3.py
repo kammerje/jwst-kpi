@@ -51,7 +51,7 @@ gain = {"NIRCAM_SHORT": 2.05, "NIRCAM_LONG": 1.82, "NIRISS": 1.61}  # e-/ADU
 # =============================================================================
 
 
-class KPI3Pipeline:
+class Kpi3Pipeline:
     """
     JWST stage 3 pipeline for kernel phase imaging.
 
