@@ -277,7 +277,7 @@ class fix_bad_pixels:
                 [PathEffects.withStroke(linewidth=3, foreground="black")]
             )
             ax[2].set_title(
-                "Full frame (log-scale, fixed)",
+                "Full frame (fixed)",
                 y=1.0,
                 pad=-20,
                 bbox=dict(facecolor="white", edgecolor="lightgrey", boxstyle="round"),
@@ -789,7 +789,7 @@ class window_frames:
                 [PathEffects.withStroke(linewidth=3, foreground="black")]
             )
             ax[1].set_title(
-                "Full frame (log-scale, windowed)",
+                "Full frame (windowed)",
                 y=1.0,
                 pad=-20,
                 bbox=dict(facecolor="white", edgecolor="lightgrey", boxstyle="round"),
@@ -1351,7 +1351,7 @@ class extract_kerphase:
                     [PathEffects.withStroke(linewidth=3, foreground="black")]
                 )
                 ax[1].set_title(
-                    "Full frame (log-scale, windowed)",
+                    "Full frame (windowed)",
                     y=1.0,
                     pad=-20,
                     bbox=dict(
