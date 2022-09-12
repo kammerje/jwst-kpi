@@ -12,6 +12,7 @@ import matplotlib.gridspec as gridspec
 import matplotlib.patheffects as PathEffects
 import matplotlib.pyplot as plt
 import numpy as np
+from astroquery.svo_fps import SvoFps
 from scipy.ndimage import median_filter
 from xara import core, kpo
 
@@ -22,20 +23,23 @@ from . import pupil_data
 PUPIL_DIR = pupil_data.__path__[0]
 
 # http://svo2.cab.inta-csic.es/theory/fps/
-wave_nircam = {"F212N": 2.121193}  # micron
-weff_nircam = {"F212N": 0.027427}  # micron
-wave_niriss = {
-    "F277W": 2.739519,
-    "F380M": 3.826384,
-    "F430M": 4.282976,
-    "F480M": 4.813019,
-}  # micron
-weff_niriss = {
-    "F277W": 0.644830,
-    "F380M": 0.201962,
-    "F430M": 0.203914,
-    "F480M": 0.297379,
-}  # micron
+wave_nircam = {}
+weff_nircam = {}
+filter_list = SvoFps.get_filter_list(facility='JWST', instrument='NIRCAM')
+for i in range(len(filter_list)):
+    name = filter_list['filterID'][i]
+    name = name[name.rfind('.')+1:]
+    wave_nircam[name] = filter_list['WavelengthMean'][i]/1e4 # micron
+    weff_nircam[name] = filter_list['WidthEff'][i]/1e4 # micron
+wave_niriss = {}
+weff_niriss = {}
+filter_list = SvoFps.get_filter_list(facility='JWST', instrument='NIRISS')
+for i in range(len(filter_list)):
+    name = filter_list['filterID'][i]
+    name = name[name.rfind('.')+1:]
+    wave_niriss[name] = filter_list['WavelengthMean'][i]/1e4 # micron
+    weff_niriss[name] = filter_list['WidthEff'][i]/1e4 # micron
+del filter_list
 # https://jwst-reffiles.stsci.edu/source/data_quality.html
 pxdq_flags = {"DO_NOT_USE": 1, "SATURATED": 2, "JUMP_DET": 4}
 # https://jwst-docs.stsci.edu/jwst-near-infrared-camera/nircam-instrumentation/nircam-detector-overview
