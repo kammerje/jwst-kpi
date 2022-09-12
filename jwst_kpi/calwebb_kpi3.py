@@ -1,12 +1,11 @@
 """
-JWST stage 3 pipeline for kernel-phase imaging.
+JWST stage 3 pipeline for kernel phase imaging.
 
-Authors: Jens Kammerer
+Authors: Jens Kammerer, Thomas Vandal
 Supported instruments: NIRCam, NIRISS
 """
 
 import os
-import sys
 
 import astropy.io.fits as pyfits
 import matplotlib.gridspec as gridspec
@@ -17,7 +16,10 @@ from scipy.ndimage import median_filter
 from xara import core, kpo
 
 from . import utils as ut
-from . import PUPIL_DIR
+from . import pupil_data
+
+
+PUPIL_DIR = pupil_data.__path__[0]
 
 # http://svo2.cab.inta-csic.es/theory/fps/
 wave_nircam = {"F212N": 2.121193}  # micron
@@ -49,12 +51,12 @@ gain = {"NIRCAM_SHORT": 2.05, "NIRCAM_LONG": 1.82, "NIRISS": 1.61}  # e-/ADU
 # =============================================================================
 
 
-class KPI3Pipeline:
+class Kpi3Pipeline:
     """
-    JWST stage 3 pipeline for kernel-phase imaging.
+    JWST stage 3 pipeline for kernel phase imaging.
 
     ..Notes:: AMI skips ipc, photom, and resample steps in stage 1 & 2
-              pipelines. Kernel-phase should also skip these steps.
+              pipelines. Kernel phase should also skip these steps.
     """
 
     def __init__(self):
@@ -124,7 +126,7 @@ class fix_bad_pixels:
     """
     Fix bad pixels.
 
-    References for the KI method:
+    References for the Fourier (KI) method:
         https://ui.adsabs.harvard.edu/abs/2019MNRAS.486..639K/abstract
         https://ui.adsabs.harvard.edu/abs/2013MNRAS.433.1718I/abstract
     """
@@ -140,7 +142,7 @@ class fix_bad_pixels:
         self.bad_bits = ["DO_NOT_USE"]
         self.bad_bits_allowed = pxdq_flags.keys()
         self.method = "medfilt"
-        self.method_allowed = ["medfilt", "KI"]
+        self.method_allowed = ["medfilt", "fourier"]
 
     def step(self, file, suffix, output_dir, show_plots=False):
         """
@@ -209,8 +211,10 @@ class fix_bad_pixels:
                         erro_bpfixed[i][mask[i]] = median_filter(
                             erro_bpfixed[i], size=5
                         )[mask[i]]
-            elif self.method == "KI":
-                raise UserWarning("Not implemented yet")
+            elif self.method == "fourier":
+                raise NotImplementedError(
+                    "Fourier-plane bad pixel correction not implemented yet."
+                )
 
         # Find output file path.
         path = ut.get_output_base(file, output_dir=output_dir)
@@ -273,7 +277,7 @@ class fix_bad_pixels:
                 [PathEffects.withStroke(linewidth=3, foreground="black")]
             )
             ax[2].set_title(
-                "Full frame (log-scale, fixed)",
+                "Full frame (fixed)",
                 y=1.0,
                 pad=-20,
                 bbox=dict(facecolor="white", edgecolor="lightgrey", boxstyle="round"),
@@ -320,7 +324,7 @@ class recenter_frames:
         self.method = "FPNM"
         self.method_allowed = ["BCEN", "COGI", "FPNM"]
         self.instrume_allowed = ["NIRCAM", "NIRISS"]
-        self.crop = False
+        self.trim = True
         self.bmax = 6.0  # m
         self.pupil_path = None
         self.verbose = False
@@ -350,12 +354,12 @@ class recenter_frames:
         FILTER = hdul[0].header["FILTER"]
 
         # Copied from bad pixel cleaning script.
-        if self.crop:
+        if self.trim:
             if INSTRUME != "NIRISS":
-                raise NotImplementedError("Cropping is implemented for NIRISS only")
+                raise NotImplementedError("Trimming is implemented for NIRISS only")
             if data.ndim != 3:
                 raise NotImplementedError(
-                    "Cropping is implemented for 3D data cube only"
+                    "Trimming is implemented for 3D data cube only"
                 )
             ww_max = []
             for i in range(data.shape[0]):
@@ -371,7 +375,7 @@ class recenter_frames:
             xh = min(sx - np.max(ww_max[:, 1]), np.min(ww_max[:, 1]) - 0)
             sh = min(xh, yh)
 
-            print("Cropping all frames to %.0fx%.0f pixels" % (2 * sh, 2 * sh))
+            print("Trimming all frames to %.0fx%.0f pixels" % (2 * sh, 2 * sh))
             data = data[
                 :,
                 ww_max[i, 0] - sh : ww_max[i, 0] + sh,
@@ -446,7 +450,12 @@ class recenter_frames:
 
             # Load pupil model.
             KPO = kpo.KPO(
-                fname=self.pupil_path, array=None, ndgt=5, bmax=self.bmax, hexa=True, ID=""
+                fname=self.pupil_path,
+                array=None,
+                ndgt=5,
+                bmax=self.bmax,
+                hexa=True,
+                ID="",
             )
             m2pix = core.mas2rad(PSCALE) * sx / wave
 
@@ -535,9 +544,9 @@ class recenter_frames:
             plt.ioff()
             f, ax = plt.subplots(2, 2, figsize=(1.5 * 6.4, 1.5 * 4.8))
             if data.ndim == 2:
-                p00 = ax[0, 0].imshow(data, origin="lower")
+                p00 = ax[0, 0].imshow(np.log10(np.abs(data)), origin="lower")
             else:
-                p00 = ax[0, 0].imshow(data[0], origin="lower")
+                p00 = ax[0, 0].imshow(np.log10(np.abs(data[0])), origin="lower")
             plt.colorbar(p00, ax=ax[0, 0])
             if data.ndim == 2:
                 ax[0, 0].axhline(sy // 2 + dy, color="red")
@@ -569,15 +578,17 @@ class recenter_frames:
                 [PathEffects.withStroke(linewidth=3, foreground="black")]
             )
             ax[0, 0].set_title(
-                "Full frame (original)",
+                "Full frame (log-scale)",
                 y=1.0,
                 pad=-20,
                 bbox=dict(facecolor="white", edgecolor="lightgrey", boxstyle="round"),
             )
             if data.ndim == 2:
-                p01 = ax[0, 1].imshow(data_recentered, origin="lower")
+                p01 = ax[0, 1].imshow(np.log10(np.abs(data_recentered)), origin="lower")
             else:
-                p01 = ax[0, 1].imshow(data_recentered[0], origin="lower")
+                p01 = ax[0, 1].imshow(
+                    np.log10(np.abs(data_recentered[0])), origin="lower"
+                )
             plt.colorbar(p01, ax=ax[0, 1])
             ax[0, 1].axhline(sy // 2, color="red")
             ax[0, 1].axvline(sx // 2, color="red")
@@ -771,6 +782,14 @@ class window_frames:
                     vmax=vmax,
                 )
             plt.colorbar(p1, ax=ax[1])
+            cc = plt.Circle(
+                (data_windowed.shape[2] // 2, data_windowed.shape[1] // 2),
+                wrad,
+                color="red",
+                ls="--",
+                fill=False,
+            )
+            ax[1].add_patch(cc)
             t1 = ax[1].text(
                 0.01,
                 0.01,
@@ -785,7 +804,7 @@ class window_frames:
                 [PathEffects.withStroke(linewidth=3, foreground="black")]
             )
             ax[1].set_title(
-                "Full frame (log-scale, windowed)",
+                "Full frame (windowed)",
                 y=1.0,
                 pad=-20,
                 bbox=dict(facecolor="white", edgecolor="lightgrey", boxstyle="round"),
@@ -825,10 +844,10 @@ class window_frames:
 
 class extract_kerphase:
     """
-    Extract the kernel-phase while re-centering in complex visibility space.
+    Extract the kernel phase while re-centering in complex visibility space.
 
     The KPFITS file structure has been agreed upon by the participants of
-    Steph Sallum's masking & kernel-phase hackathon in 2021 and is defined
+    Steph Sallum's masking & kernel phase hackathon in 2021 and is defined
     here:
         https://docs.google.com/document/d/1iBbcCYiq9J2PpLSr21-xB4AXP8X_6tSszxnHY1VDGXg/edit?usp=sharing
     """
@@ -883,12 +902,12 @@ class extract_kerphase:
         FILTER = hdul[0].header["FILTER"]
 
         # Copied from bad pixel cleaning script.
-        if recenter_frames_obj.crop:
+        if recenter_frames_obj.trim:
             if INSTRUME != "NIRISS":
-                raise NotImplementedError("Cropping is implemented for NIRISS only")
+                raise NotImplementedError("Trimming is implemented for NIRISS only")
             if data.ndim != 3:
                 raise NotImplementedError(
-                    "Cropping is implemented for 3D data cube only"
+                    "Trimming is implemented for 3D data cube only"
                 )
             ww_max = []
             for i in range(data.shape[0]):
@@ -904,7 +923,7 @@ class extract_kerphase:
             xh = min(sx - np.max(ww_max[:, 1]), np.min(ww_max[:, 1]) - 0)
             sh = min(xh, yh)
 
-            print("Cropping all frames to %.0fx%.0f pixels" % (2 * sh, 2 * sh))
+            print("Trimming all frames to %.0fx%.0f pixels" % (2 * sh, 2 * sh))
             data = data[
                 :,
                 ww_max[i, 0] - sh : ww_max[i, 0] + sh,
@@ -975,9 +994,11 @@ class extract_kerphase:
         # txtfile.close()
 
         # Load pupil model.
-        KPO = kpo.KPO(fname=self.pupil_path, array=None, ndgt=5, bmax=self.bmax, hexa=True, ID="")
+        KPO = kpo.KPO(
+            fname=self.pupil_path, array=None, ndgt=5, bmax=self.bmax, hexa=True, ID=""
+        )
 
-        # Re-center, window, and extract kernel-phase.
+        # Re-center, window, and extract kernel phase.
         if not window_frames_obj.skip:
             wrad = window_frames_obj.wrad  # pix
             if wrad is None:
@@ -1117,9 +1138,9 @@ class extract_kerphase:
                 plt.ioff()
                 f, ax = plt.subplots(2, 2, figsize=(1.5 * 6.4, 1.5 * 4.8))
                 if data.ndim == 2:
-                    p00 = ax[0, 0].imshow(data, origin="lower")
+                    p00 = ax[0, 0].imshow(np.log10(np.abs(data)), origin="lower")
                 else:
-                    p00 = ax[0, 0].imshow(data[0], origin="lower")
+                    p00 = ax[0, 0].imshow(np.log10(np.abs(data[0])), origin="lower")
                 plt.colorbar(p00, ax=ax[0, 0])
                 if data.ndim == 2:
                     ax[0, 0].axhline(sy // 2 + dy, color="red")
@@ -1151,7 +1172,7 @@ class extract_kerphase:
                     [PathEffects.withStroke(linewidth=3, foreground="black")]
                 )
                 ax[0, 0].set_title(
-                    "Full frame (original)",
+                    "Full frame (log-scale)",
                     y=1.0,
                     pad=-20,
                     bbox=dict(
@@ -1159,9 +1180,13 @@ class extract_kerphase:
                     ),
                 )
                 if data.ndim == 2:
-                    p01 = ax[0, 1].imshow(data_recentered, origin="lower")
+                    p01 = ax[0, 1].imshow(
+                        np.log10(np.abs(data_recentered)), origin="lower"
+                    )
                 else:
-                    p01 = ax[0, 1].imshow(data_recentered[0], origin="lower")
+                    p01 = ax[0, 1].imshow(
+                        np.log10(np.abs(data_recentered[0])), origin="lower"
+                    )
                 plt.colorbar(p01, ax=ax[0, 1])
                 ax[0, 1].axhline(sy // 2, color="red")
                 ax[0, 1].axvline(sx // 2, color="red")
@@ -1333,6 +1358,14 @@ class extract_kerphase:
                         vmax=vmax,
                     )
                 plt.colorbar(p1, ax=ax[1])
+                cc = plt.Circle(
+                    (data_windowed.shape[2] // 2, data_windowed.shape[1] // 2),
+                    wrad,
+                    color="red",
+                    ls="--",
+                    fill=False,
+                )
+                ax[1].add_patch(cc)
                 t1 = ax[1].text(
                     0.01,
                     0.01,
@@ -1347,7 +1380,7 @@ class extract_kerphase:
                     [PathEffects.withStroke(linewidth=3, foreground="black")]
                 )
                 ax[1].set_title(
-                    "Full frame (log-scale, windowed)",
+                    "Full frame (windowed)",
                     y=1.0,
                     pad=-20,
                     bbox=dict(
@@ -1384,7 +1417,7 @@ class extract_kerphase:
             data_windowed = data_recentered.copy()
             erro_windowed = erro_recentered.copy()
 
-        # Extract kernel-phase covariance.
+        # Extract kernel phase covariance.
         if data.ndim == 2:
             frame = data_windowed.copy()
             varframe = erro_windowed.copy() ** 2
@@ -1451,7 +1484,7 @@ class extract_kerphase:
             c01 = plt.colorbar(p01, ax=ax[0, 1])
             c01.set_label("Correlation", rotation=270, labelpad=20)
             ax[0, 1].set_title(
-                "Kernel-phase correlation",
+                "Kernel phase correlation",
                 y=1.0,
                 pad=-20,
                 bbox=dict(facecolor="white", edgecolor="lightgrey", boxstyle="round"),
@@ -1495,9 +1528,9 @@ class extract_kerphase:
             ax[1, 1].set_ylim([-np.max(ylim), np.max(ylim)])
             ax[1, 1].grid(axis="y")
             ax[1, 1].set_xlabel("Index")
-            ax[1, 1].set_ylabel("Kernel-phase [rad]")
+            ax[1, 1].set_ylabel("Kernel phase [rad]")
             ax[1, 1].set_title(
-                "Kernel-phase",
+                "Kernel phase",
                 y=1.0,
                 pad=-20,
                 bbox=dict(facecolor="white", edgecolor="lightgrey", boxstyle="round"),
@@ -1610,7 +1643,7 @@ class extract_kerphase:
 
 class empirical_uncertainties:
     """
-    Compute empirical uncertainties for the kernel-phase.
+    Compute empirical uncertainties for the kernel phase.
     """
 
     def __init__(self):
@@ -1708,7 +1741,7 @@ class empirical_uncertainties:
                 emcor[0, 0], origin="lower", cmap="RdBu", vmin=-1.0, vmax=1.0
             )
             c00 = plt.colorbar(p00, ax=ax)
-            c00.set_label("Kernel-phase correlation", rotation=270, labelpad=20)
+            c00.set_label("Kernel phase correlation", rotation=270, labelpad=20)
             ax.set_title(
                 "Theoretical estimate",
                 y=1.0,
@@ -1720,7 +1753,7 @@ class empirical_uncertainties:
                 emcor_sample[0, 0], origin="lower", cmap="RdBu", vmin=-1.0, vmax=1.0
             )
             c01 = plt.colorbar(p01, ax=ax)
-            c01.set_label("Kernel-phase correlation", rotation=270, labelpad=20)
+            c01.set_label("Kernel phase correlation", rotation=270, labelpad=20)
             ax.set_title(
                 "Empirical estimate",
                 y=1.0,
@@ -1758,7 +1791,7 @@ class empirical_uncertainties:
             ax.set_ylim([-np.max(ylim), np.max(ylim)])
             ax.grid(axis="y")
             ax.set_xlabel("Index")
-            ax.set_ylabel("Kernel-phase [rad]")
+            ax.set_ylabel("Kernel phase [rad]")
             ax.legend(loc="upper right")
             plt.suptitle("Empirical uncertainties step", size=18)
             plt.tight_layout()

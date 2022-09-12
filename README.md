@@ -25,13 +25,10 @@ source <env-name>/bin/activate
 
 ### Install jwst-kpi
 
-<!-- TODO: Update KPI3 to Kpi3 when this change is pushed -->
-
-
-To install the jwst `KPI3Pipeline` in your new virtual environment, you can either clone and install locally:
+To install the jwst `Kpi3Pipeline` in your new virtual environment, you can either clone and install locally:
 
 ```
-git clone https://github.com/vandalt/jwst-kpi
+git clone https://github.com/kammerje/jwst-kpi
 cd jwst-kpi
 python -m pip install .
 ```
@@ -39,7 +36,7 @@ python -m pip install .
 or directly with `pip` from the Github repository:
 
 ```
-python -m pip install git+https://github.com/vandalt/jwst-kpi
+python -m pip install git+https://github.com/kammerje/jwst-kpi
 ```
 
 

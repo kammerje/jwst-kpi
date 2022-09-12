@@ -4,97 +4,83 @@ how the current default model has been implemented.
 """
 import warnings
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional, Tuple, Union
 
+import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import numpy as np
 from astropy.io import fits
 from scipy.ndimage import rotate, shift
-from xara import create_discrete_model, hexagon, kpi, symetrizes_model
+from xaosim.pupil import hex_mirror_model, uniform_hex
+from xara import create_discrete_model, kpi, symetrizes_model
 
 from jwst_kpi import PUPIL_DIR
 
 
-# TODO: Add step and binary parameters
-# TODO: Add docstrings
-# TODO: Use function from Frantz used for model in paper
-def create_hex_model(aper, pxsc):
-    d_hex = 1.32  # m; short diagonal of an individual mirror segment
-    D_hex = (
-        d_hex * 2.0 / np.sqrt(3.0)
-    )  # m; long diagonal of an individual mirror segment
-    # TODO: Is there a way to make this a loop or simplify it?
-    xy = np.array(
-        [
-            [0.0, 0.0],
-            [0.0, -d_hex],
-            [0.0, d_hex],
-            [0.0, -2.0 * d_hex],
-            [0.0, 2.0 * d_hex],
-            [0.0, -3.0 * d_hex],
-            [0.0, 3.0 * d_hex],
-            [-0.75 * D_hex, -0.5 * d_hex],
-            [-0.75 * D_hex, 0.5 * d_hex],
-            [-0.75 * D_hex, -1.5 * d_hex],
-            [-0.75 * D_hex, 1.5 * d_hex],
-            [-0.75 * D_hex, -2.5 * d_hex],
-            [-0.75 * D_hex, 2.5 * d_hex],
-            [0.75 * D_hex, -0.5 * d_hex],
-            [0.75 * D_hex, 0.5 * d_hex],
-            [0.75 * D_hex, -1.5 * d_hex],
-            [0.75 * D_hex, 1.5 * d_hex],
-            [0.75 * D_hex, -2.5 * d_hex],
-            [0.75 * D_hex, 2.5 * d_hex],
-            [-1.5 * D_hex, 0.0],
-            [-1.5 * D_hex, -d_hex],
-            [-1.5 * D_hex, d_hex],
-            [-1.5 * D_hex, -2.0 * d_hex],
-            [-1.5 * D_hex, 2.0 * d_hex],
-            [1.5 * D_hex, 0.0],
-            [1.5 * D_hex, -d_hex],
-            [1.5 * D_hex, d_hex],
-            [1.5 * D_hex, -2.0 * d_hex],
-            [1.5 * D_hex, 2.0 * d_hex],
-            [-2.25 * D_hex, -0.5 * d_hex],
-            [-2.25 * D_hex, 0.5 * d_hex],
-            [-2.25 * D_hex, -1.5 * d_hex],
-            [-2.25 * D_hex, 1.5 * d_hex],
-            [2.25 * D_hex, -0.5 * d_hex],
-            [2.25 * D_hex, 0.5 * d_hex],
-            [2.25 * D_hex, -1.5 * d_hex],
-            [2.25 * D_hex, 1.5 * d_hex],
-        ]
-    )
-    xy_all = []
-    for i in range(xy.shape[0]):
-        for j in range(3):
-            xx = d_hex / 3.0 * np.sin(j / 3.0 * 2.0 * np.pi)
-            yy = d_hex / 3.0 * np.cos(j / 3.0 * 2.0 * np.pi)
-            xy_all += [[xy[i, 0] + xx, xy[i, 1] + yy]]
-    xy_all = np.array(xy_all)
+def create_hex_model(
+    aper: np.ndarray,
+    pscale: float,
+    ns: int = 3,
+    sdiam: float = 1.32,
+) -> Tuple[np.ndarray]:
+    """
+    Create discrete pupil model for Xara with hexagonal grid
 
-    mask = np.zeros_like(aper)
-    for i in range(xy_all.shape[0]):
-        sapt = hexagon(aper.shape[0], 0.45 * D_hex / pxsc)
-        sapt = shift(sapt, (xy_all[i, 1] / pxsc, xy_all[i, 0] / pxsc), order=0)
-        mask = (mask > 0.5) | (sapt > 0.5)
+    The original code used for this function is from Frantz Martinache and Jens Kammerer.
+    It was adapted by Thomas Vandal to fit in the curernt framework.
 
-    model = []
-    for i in range(xy_all.shape[0]):
-        sapt = hexagon(aper.shape[0], 0.50 * D_hex / pxsc)
-        sapt = shift(sapt, (xy_all[i, 1] / pxsc, xy_all[i, 0] / pxsc), order=0)
-        ww = sapt > 0.5
-        if np.sum(ww) < 0.5:
-            tt = 0.0
-        else:
-            tt = np.mean(aper[ww])
-        if tt == 0.0:
-            continue
-        else:
-            model += [[xy_all[i, 0], xy_all[i, 1], tt]]
-    model = np.array(model)
+    Parameters
+    ----------
+    aper : np.ndarray
+        Pupil mask at high resolution (like those from WebbPSF)
+    pscale : float
+        Pupil pixel scale in meter
+    ns : int
+        Number of hexagonal rings within a mirror segment
+        (one hexagon in the middle, ns rings around)
+    sdiam : float
+        Center-to-center distance of mirror segments.
 
-    return model
+    Returns
+    -------
+    Tuple[np.ndarray]
+        - model: Discrete pupil model
+        - tmp: Array describing the overlap (sum) of the original array and of the discrete model.
+    """
+    psz = aper.shape[0]
+
+    # x,y coordinates for the discrete model
+    coords = hex_mirror_model(2, ns, sdiam, fill=False)
+    coords = np.unique(np.round(coords, 3), axis=1)
+    nc = coords.shape[1]  # number of potential coordinate holes
+
+    # appending a column for transmission
+    tcoords = np.ones((3, nc))
+    tcoords[:2, :] = coords
+
+    seg_mask = uniform_hex(psz, psz, sdiam / (2 * ns + 1) / pscale * np.sqrt(3) / 2)
+    snorm = seg_mask.sum()
+
+    tmp = aper.copy()
+
+    for ii in range(nc):
+        # Get coords of one sub-aperture in grid
+        sx, sy = np.round(tcoords[:2, ii] / pscale).astype(int)
+        # Move mask to this location
+        mask = np.roll(seg_mask, (sy, sx), axis=(0, 1))
+
+        # Sum with pupil: where both == 2¸ where only one == 1, where nothing == 0
+        tmp += mask
+
+        # Get overlap of sub-aperture with with pupil and get fraction of segment
+        tcoords[2, ii] = (mask * aper).sum() / snorm
+
+    # eliminate edge cases, based on their transmission
+    threshold = 0.7
+    keep = tcoords[2] > threshold
+    tcoords = tcoords[:, keep]
+
+    return tcoords.T, tmp
 
 
 def generate_pupil_model(
@@ -103,6 +89,7 @@ def generate_pupil_model(
     tmin: float,
     binary: bool = False,
     symmetrize: bool = False,
+    pad: int = 50,
     cut: float = 0.1,
     rot_ang: float = 0.0,
     bmax: float = None,
@@ -171,11 +158,15 @@ def generate_pupil_model(
     with fits.open(input_mask_path) as hdul:
         aper = hdul[0].data
         pxsc = hdul[0].header["PUPLSCAL"]  # m, pupil scale
+    aper = aper[:-1, :-1]
+    aper = shift(aper, (-0.5, -0.5))
+    if pad > 0:
+        aper = np.pad(aper, ((pad, pad), (pad, pad)))
     if np.abs(rot_ang) > 0.0:
         aper = rotate(aper, rot_ang, order=1)
 
     if hex_grid:
-        model = create_hex_model(aper, pxsc)
+        model, tmp = create_hex_model(aper, pxsc)
     else:
         model = create_discrete_model(aper, pxsc, step, binary=binary, tmin=tmin)
     if symmetrize:
@@ -197,7 +188,21 @@ def generate_pupil_model(
     KPI.package_as_fits(fname=out_fits)
 
     if show or out_plot is not None:
-        _ = KPI.plot_pupil_and_uv(cmap="inferno")
+        if not hex_grid:
+            _ = KPI.plot_pupil_and_uv(cmap="inferno", marker=".")
+        else:
+            mmax = (aper.shape[0] * pxsc) / 2
+            plt.figure(1, figsize=(6.4, 4.8))
+            plt.clf()
+            plt.imshow(tmp, extent=(-mmax, mmax, -mmax, mmax), cmap=cm.gray)
+            plt.scatter(
+                model[:, 0], model[:, 1], c=model[:, 2], s=50
+            )  # , cmap=cm.rainbow)
+            cb = plt.colorbar()
+            cb.set_label("Transmission", rotation=270, labelpad=20)
+            plt.xlabel("Size [m]")
+            plt.ylabel("Size [m]")
+            plt.tight_layout()
         if show:
             plt.show(block=True)
         if out_plot is not None:
@@ -222,7 +227,7 @@ if __name__ == "__main__":
         bmax=None,
         hex_border=True,
         show=True,
-        # hex_grid=True,  # For hex CLEARP and CLEAR
+        hex_grid=True,  # For hex CLEARP and CLEAR
         # min_red=2,  # For hex CLEARP
     )
 
@@ -231,21 +236,12 @@ if __name__ == "__main__":
         **base_dict,
     }
 
-    niriss_nrm_dict = {
-        **dict(input_mask="NRM", out_fits=output_dir / "niriss_nrm_pupil.fits"),
-        **base_dict,
-    }
-    niriss_nrm_dict["symmetrize"] = False  # Never symmetrize: NRM is not symmetric
-    niriss_nrm_dict["hex_grid"] = False  # Never use hex grid for this one: not tested
-    niriss_nrm_dict["min_red"] = 0.0
-
     nircam_clear_dict = {
         **dict(input_mask="CLEAR", out_fits=output_dir / "nircam_clear_pupil.fits"),
         **base_dict,
     }
-    print(niriss_nrm_dict["min_red"])
 
-    models = [niriss_clearp_dict, niriss_nrm_dict, nircam_clear_dict]
+    models = [niriss_clearp_dict, nircam_clear_dict]
 
     for model in models:
         KPI = generate_pupil_model(**model)
