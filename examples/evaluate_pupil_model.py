@@ -19,7 +19,7 @@ KPO = xara.kpo.KPO(fname="pupil_results/niriss_clear_pupil.fits")
 
 # %%
 # Load a point source commissioning observation
-file = "examples/kerphase_testdata/NIRISS/TYC-8906-1660-1/jw01093022001_03103_00001_nis_calints.fits"
+file = "kerphase_testdata/NIRISS/TYC-8906-1660-1/jw01093022001_03103_00001_nis_calints.fits"
 
 with fits.open(file) as hdul:
     data = hdul["SCI"].data
