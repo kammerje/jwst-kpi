@@ -4,7 +4,7 @@ JWST stage 3 pipeline for kernel phase imaging.
 Authors: Jens Kammerer, Thomas Vandal
 Supported instruments: NIRCam, NIRISS
 """
-
+# Test to see if I am in the right branch
 import os
 
 import astropy.io.fits as pyfits
