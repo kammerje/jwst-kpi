@@ -1659,7 +1659,7 @@ class empirical_uncertainties:
         self.skip = False
         self.plot = True
         self.get_emp_err = True
-        self.get_emp_cor = True
+        self.get_emp_cor = False
 
     def step(self, file, suffix, output_dir, show_plots=False):
         """
@@ -1716,7 +1716,7 @@ class empirical_uncertainties:
             wmcov[0, i] = np.linalg.inv(np.sum(np.array(invcov), axis=0))
             wmsig[0, i] = np.sqrt(np.diag(wmcov[0, i]))
             wmdat[0, i] = wmcov[0, i].dot(np.sum(np.array(invcovdat), axis=0))
-            emsig[0, i] = np.std(kpdat[:, i], axis=0)
+            emsig[0, i] = np.std(kpdat[:, i], axis=0)/np.sqrt(nframe)
             wmcor = np.true_divide(
                 wmcov[0, i], wmsig[0, i][:, None] * wmsig[0, i][None, :]
             )
