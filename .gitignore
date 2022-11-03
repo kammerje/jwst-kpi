@@ -131,3 +131,4 @@ dmypy.json
 # Ignore example output files
 examples/pupil_results/
 examples/kerphase_testdata/
+examples/crds_cache
