@@ -340,6 +340,7 @@ class recenter_frames:
         self.method_allowed = ["BCEN", "COGI", "FPNM"]
         self.instrume_allowed = ["NIRCAM", "NIRISS", "MIRI"]
         self.trim = True
+        self.trim_cent = None
         self.bmax = 6.0  # m
         self.pupil_path = None
         self.verbose = False
@@ -370,25 +371,37 @@ class recenter_frames:
 
         # Copied from bad pixel cleaning script.
         if self.trim:
-            if INSTRUME != "NIRISS":
+            if INSTRUME not in ["NIRISS", "MIRI"]:
                 raise NotImplementedError("Trimming is implemented for NIRISS only")
             if data.ndim != 3:
                 raise NotImplementedError(
                     "Trimming is implemented for 3D data cube only"
                 )
-            ww_max = []
-            for i in range(data.shape[0]):
-                ww_max += [
-                    np.unravel_index(
-                        np.argmax(median_filter(data[i], size=3)), data[i].shape
-                    )
-                ]
-            ww_max = np.array(ww_max)
+            if self.trim_cent is None:
+                ww_max = []
+                for i in range(data.shape[0]):
+                    ww_max += [
+                        np.unravel_index(
+                            np.argmax(median_filter(data[i], size=3)), data[i].shape
+                        )
+                    ]
+                ww_max = np.array(ww_max)
+            else:
+                ww_max = np.array([[self.trim_cent[0], self.trim_cent[1]]]*data.shape[0])
 
-            # The bottom four rows are reference pixels.
-            yh = min(sy - np.max(ww_max[:, 0]), np.min(ww_max[:, 0]) - 4)
-            xh = min(sx - np.max(ww_max[:, 1]), np.min(ww_max[:, 1]) - 0)
-            sh = min(xh, yh)
+            if INSTRUME == "NIRISS":
+
+                # The bottom five rows are reference pixels.
+                yh = min(sy - np.max(ww_max[:, 0]), np.min(ww_max[:, 0]) - 5)
+                xh = min(sx - np.max(ww_max[:, 1]), np.min(ww_max[:, 1]) - 0)
+                sh = min(xh, yh)
+
+            elif INSTRUME == "MIRI":
+
+                # The bottom four rows are reference pixels.
+                yh = min(sy - np.max(ww_max[:, 0]) - 10, np.min(ww_max[:, 0]) - 10)
+                xh = min(sx - np.max(ww_max[:, 1]) - 10, np.min(ww_max[:, 1]) - 420)
+                sh = min(xh, yh)
 
             print("Trimming all frames to %.0fx%.0f pixels" % (2 * sh, 2 * sh))
             data = data[
@@ -1686,7 +1699,7 @@ class empirical_uncertainties:
         self.skip = False
         self.plot = True
         self.get_emp_err = True
-        self.get_emp_cor = True
+        self.get_emp_cor = False
 
     def step(self, file, suffix, output_dir, show_plots=False):
         """
@@ -1743,7 +1756,7 @@ class empirical_uncertainties:
             wmcov[0, i] = np.linalg.inv(np.sum(np.array(invcov), axis=0))
             wmsig[0, i] = np.sqrt(np.diag(wmcov[0, i]))
             wmdat[0, i] = wmcov[0, i].dot(np.sum(np.array(invcovdat), axis=0))
-            emsig[0, i] = np.std(kpdat[:, i], axis=0)
+            emsig[0, i] = np.std(kpdat[:, i], axis=0)/np.sqrt(nframe)
             wmcor = np.true_divide(
                 wmcov[0, i], wmsig[0, i][:, None] * wmsig[0, i][None, :]
             )
