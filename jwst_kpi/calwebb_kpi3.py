@@ -329,6 +329,7 @@ class recenter_frames:
         self.method_allowed = ["BCEN", "COGI", "FPNM"]
         self.instrume_allowed = ["NIRCAM", "NIRISS"]
         self.trim = True
+        self.trim_cent = None
         self.bmax = 6.0  # m
         self.pupil_path = None
         self.verbose = False
@@ -359,25 +360,37 @@ class recenter_frames:
 
         # Copied from bad pixel cleaning script.
         if self.trim:
-            if INSTRUME != "NIRISS":
+            if INSTRUME not in ["NIRISS", "MIRI"]:
                 raise NotImplementedError("Trimming is implemented for NIRISS only")
             if data.ndim != 3:
                 raise NotImplementedError(
                     "Trimming is implemented for 3D data cube only"
                 )
-            ww_max = []
-            for i in range(data.shape[0]):
-                ww_max += [
-                    np.unravel_index(
-                        np.argmax(median_filter(data[i], size=3)), data[i].shape
-                    )
-                ]
-            ww_max = np.array(ww_max)
+            if self.trim_cent is None:
+                ww_max = []
+                for i in range(data.shape[0]):
+                    ww_max += [
+                        np.unravel_index(
+                            np.argmax(median_filter(data[i], size=3)), data[i].shape
+                        )
+                    ]
+                ww_max = np.array(ww_max)
+            else:
+                ww_max = np.array([[self.trim_cent[0], self.trim_cent[1]]]*data.shape[0])
 
-            # The bottom four rows are reference pixels.
-            yh = min(sy - np.max(ww_max[:, 0]), np.min(ww_max[:, 0]) - 4)
-            xh = min(sx - np.max(ww_max[:, 1]), np.min(ww_max[:, 1]) - 0)
-            sh = min(xh, yh)
+            if INSTRUME == "NIRISS":
+
+                # The bottom five rows are reference pixels.
+                yh = min(sy - np.max(ww_max[:, 0]), np.min(ww_max[:, 0]) - 5)
+                xh = min(sx - np.max(ww_max[:, 1]), np.min(ww_max[:, 1]) - 0)
+                sh = min(xh, yh)
+
+            elif INSTRUME == "MIRI":
+
+                # The bottom four rows are reference pixels.
+                yh = min(sy - np.max(ww_max[:, 0]) - 10, np.min(ww_max[:, 0]) - 10)
+                xh = min(sx - np.max(ww_max[:, 1]) - 10, np.min(ww_max[:, 1]) - 420)
+                sh = min(xh, yh)
 
             print("Trimming all frames to %.0fx%.0f pixels" % (2 * sh, 2 * sh))
             data = data[
