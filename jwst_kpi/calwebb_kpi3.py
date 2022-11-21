@@ -341,6 +341,7 @@ class recenter_frames:
         self.instrume_allowed = ["NIRCAM", "NIRISS", "MIRI"]
         self.trim = True
         self.trim_cent = None
+        self.halfImSize = 40
         self.bmax = 6.0  # m
         self.pupil_path = None
         self.verbose = False
@@ -372,7 +373,7 @@ class recenter_frames:
         # Copied from bad pixel cleaning script.
         if self.trim:
             if INSTRUME not in ["NIRISS", "MIRI"]:
-                raise NotImplementedError("Trimming is implemented for NIRISS only")
+                raise NotImplementedError("Trimming is implemented for NIRISS and MIRI only")
             if data.ndim != 3:
                 raise NotImplementedError(
                     "Trimming is implemented for 3D data cube only"
@@ -390,30 +391,28 @@ class recenter_frames:
                 ww_max = np.array([[self.trim_cent[0], self.trim_cent[1]]]*data.shape[0])
 
             if INSTRUME == "NIRISS":
-
                 # The bottom five rows are reference pixels.
                 yh = min(sy - np.max(ww_max[:, 0]), np.min(ww_max[:, 0]) - 5)
                 xh = min(sx - np.max(ww_max[:, 1]), np.min(ww_max[:, 1]) - 0)
                 sh = min(xh, yh)
-
             elif INSTRUME == "MIRI":
-
-                # The bottom four rows are reference pixels.
-                yh = min(sy - np.max(ww_max[:, 0]) - 10, np.min(ww_max[:, 0]) - 10)
-                xh = min(sx - np.max(ww_max[:, 1]) - 10, np.min(ww_max[:, 1]) - 420)
-                sh = min(xh, yh)
+                sh = self.halfImSize
 
             print("Trimming all frames to %.0fx%.0f pixels" % (2 * sh, 2 * sh))
-            data = data[
-                :,
-                ww_max[i, 0] - sh : ww_max[i, 0] + sh,
-                ww_max[i, 1] - sh : ww_max[i, 1] + sh,
-            ].copy()
-            erro = erro[
-                :,
-                ww_max[i, 0] - sh : ww_max[i, 0] + sh,
-                ww_max[i, 1] - sh : ww_max[i, 1] + sh,
-            ].copy()
+            
+            dataCopy = data.copy()
+            erroCopy = erro.copy()
+            for i in range(data.shape[0]):
+                data = dataCopy[
+                    :,
+                    ww_max[i, 0] - sh : ww_max[i, 0] + sh,
+                    ww_max[i, 1] - sh : ww_max[i, 1] + sh,
+                ].copy()
+                erro = erroCopy[
+                    :,
+                    ww_max[i, 0] - sh : ww_max[i, 0] + sh,
+                    ww_max[i, 1] - sh : ww_max[i, 1] + sh,
+                ].copy()
             sy, sx = data.shape[-2:]
 
         # PSCALE = np.sqrt(hdul['SCI'].header['PIXAR_A2'])*1000. # mas
@@ -898,6 +897,8 @@ class extract_kerphase:
         self.plot = True
         self.instrume_allowed = ["NIRCAM", "NIRISS", "MIRI"]
         self.bmax = None  # m
+        self.trim_cent = None
+        self.halfImSize = 40
         self.pupil_path = None
         self.verbose = False
 
@@ -939,37 +940,47 @@ class extract_kerphase:
 
         # Copied from bad pixel cleaning script.
         if recenter_frames_obj.trim:
-            if INSTRUME != "NIRISS":
-                raise NotImplementedError("Trimming is implemented for NIRISS only")
+            if INSTRUME not in ["NIRISS", "MIRI"]:
+                raise NotImplementedError("Trimming is implemented for NIRISS and MIRI only")
             if data.ndim != 3:
                 raise NotImplementedError(
                     "Trimming is implemented for 3D data cube only"
                 )
-            ww_max = []
-            for i in range(data.shape[0]):
-                ww_max += [
-                    np.unravel_index(
-                        np.argmax(median_filter(data[i], size=3)), data[i].shape
-                    )
-                ]
-            ww_max = np.array(ww_max)
+            if self.trim_cent is None:
+                ww_max = []
+                for i in range(data.shape[0]):
+                    ww_max += [
+                        np.unravel_index(
+                            np.argmax(median_filter(data[i], size=3)), data[i].shape
+                        )
+                    ]
+                ww_max = np.array(ww_max)
+            else:
+                ww_max = np.array([[self.trim_cent[0], self.trim_cent[1]]]*data.shape[0])
 
-            # The bottom four rows are reference pixels.
-            yh = min(sy - np.max(ww_max[:, 0]), np.min(ww_max[:, 0]) - 4)
-            xh = min(sx - np.max(ww_max[:, 1]), np.min(ww_max[:, 1]) - 0)
-            sh = min(xh, yh)
+            if INSTRUME == "NIRISS":
+                # The bottom five rows are reference pixels.
+                yh = min(sy - np.max(ww_max[:, 0]), np.min(ww_max[:, 0]) - 5)
+                xh = min(sx - np.max(ww_max[:, 1]), np.min(ww_max[:, 1]) - 0)
+                sh = min(xh, yh)
+            elif INSTRUME == "MIRI":
+                sh = self.halfImSize
 
             print("Trimming all frames to %.0fx%.0f pixels" % (2 * sh, 2 * sh))
-            data = data[
-                :,
-                ww_max[i, 0] - sh : ww_max[i, 0] + sh,
-                ww_max[i, 1] - sh : ww_max[i, 1] + sh,
-            ].copy()
-            erro = erro[
-                :,
-                ww_max[i, 0] - sh : ww_max[i, 0] + sh,
-                ww_max[i, 1] - sh : ww_max[i, 1] + sh,
-            ].copy()
+            
+            dataCopy = data.copy()
+            erroCopy = erro.copy()
+            for i in range(data.shape[0]):
+                data = dataCopy[
+                    :,
+                    ww_max[i, 0] - sh : ww_max[i, 0] + sh,
+                    ww_max[i, 1] - sh : ww_max[i, 1] + sh,
+                ].copy()
+                erro = erroCopy[
+                    :,
+                    ww_max[i, 0] - sh : ww_max[i, 0] + sh,
+                    ww_max[i, 1] - sh : ww_max[i, 1] + sh,
+                ].copy()
             sy, sx = data.shape[-2:]
 
         # PSCALE = np.sqrt(hdul['SCI'].header['PIXAR_A2'])*1000. # mas
