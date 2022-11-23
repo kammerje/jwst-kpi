@@ -132,3 +132,6 @@ dmypy.json
 examples/pupil_results/
 examples/kerphase_testdata/
 examples/crds_cache
+
+# Ignore .DS_Store file
+*.DS_Store
