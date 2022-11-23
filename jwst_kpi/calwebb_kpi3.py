@@ -2,7 +2,7 @@
 JWST stage 3 pipeline for kernel phase imaging.
 
 Authors: Jens Kammerer, Thomas Vandal
-Supported instruments: NIRCam, NIRISS
+Supported instruments: NIRCam, NIRISS, MIRI
 """
 
 import os
@@ -39,15 +39,26 @@ for i in range(len(filter_list)):
     name = name[name.rfind('.')+1:]
     wave_niriss[name] = filter_list['WavelengthMean'][i]/1e4 # micron
     weff_niriss[name] = filter_list['WidthEff'][i]/1e4 # micron
+wave_miri = {}
+weff_miri = {}
+filter_list = SvoFps.get_filter_list(facility='JWST', instrument='MIRI')
+for i in range(len(filter_list)):
+    name = filter_list['filterID'][i]
+    name = name[name.rfind('.')+1:]
+    wave_miri[name] = filter_list['WavelengthMean'][i]/1e4 # micron
+    weff_miri[name] = filter_list['WidthEff'][i]/1e4 # micron
+
 del filter_list
 # https://jwst-reffiles.stsci.edu/source/data_quality.html
 pxdq_flags = {"DO_NOT_USE": 1, "SATURATED": 2, "JUMP_DET": 4}
 # https://jwst-docs.stsci.edu/jwst-near-infrared-camera/nircam-instrumentation/nircam-detector-overview
 # https://jwst-docs.stsci.edu/jwst-near-infrared-imager-and-slitless-spectrograph/niriss-instrumentation/niriss-detector-overview
-pscale = {"NIRCAM_SHORT": 31.0, "NIRCAM_LONG": 63.0, "NIRISS": 65.6}  # mas
+# https://jwst-docs.stsci.edu/jwst-mid-infrared-instrument/miri-instrumentation/miri-detector-overview
+pscale = {"NIRCAM_SHORT": 31.0, "NIRCAM_LONG": 63.0, "NIRISS": 65.6, "MIRI": 110.0}  # mas
 # https://jwst-docs.stsci.edu/jwst-near-infrared-camera/nircam-instrumentation/nircam-detector-overview/nircam-detector-performance
 # https://jwst-docs.stsci.edu/jwst-near-infrared-imager-and-slitless-spectrograph/niriss-instrumentation/niriss-detector-overview/niriss-detector-performance
-gain = {"NIRCAM_SHORT": 2.05, "NIRCAM_LONG": 1.82, "NIRISS": 1.61}  # e-/ADU
+# https://jwst-docs.stsci.edu/jwst-mid-infrared-instrument/miri-instrumentation/miri-detector-overview/miri-detector-performance
+gain = {"NIRCAM_SHORT": 2.05, "NIRCAM_LONG": 1.82, "NIRISS": 1.61, "MIRI": 5.5}  # e-/ADU
 
 
 # =============================================================================
@@ -327,9 +338,10 @@ class recenter_frames:
         self.plot = True
         self.method = "FPNM"
         self.method_allowed = ["BCEN", "COGI", "FPNM"]
-        self.instrume_allowed = ["NIRCAM", "NIRISS"]
+        self.instrume_allowed = ["NIRCAM", "NIRISS", "MIRI"]
         self.trim = True
         self.trim_cent = None
+        self.halfImSize = 40
         self.bmax = 6.0  # m
         self.pupil_path = None
         self.verbose = False
@@ -361,7 +373,7 @@ class recenter_frames:
         # Copied from bad pixel cleaning script.
         if self.trim:
             if INSTRUME not in ["NIRISS", "MIRI"]:
-                raise NotImplementedError("Trimming is implemented for NIRISS only")
+                raise NotImplementedError("Trimming is implemented for NIRISS and MIRI only")
             if data.ndim != 3:
                 raise NotImplementedError(
                     "Trimming is implemented for 3D data cube only"
@@ -379,30 +391,28 @@ class recenter_frames:
                 ww_max = np.array([[self.trim_cent[0], self.trim_cent[1]]]*data.shape[0])
 
             if INSTRUME == "NIRISS":
-
                 # The bottom five rows are reference pixels.
                 yh = min(sy - np.max(ww_max[:, 0]), np.min(ww_max[:, 0]) - 5)
                 xh = min(sx - np.max(ww_max[:, 1]), np.min(ww_max[:, 1]) - 0)
                 sh = min(xh, yh)
-
             elif INSTRUME == "MIRI":
-
-                # The bottom four rows are reference pixels.
-                yh = min(sy - np.max(ww_max[:, 0]) - 10, np.min(ww_max[:, 0]) - 10)
-                xh = min(sx - np.max(ww_max[:, 1]) - 10, np.min(ww_max[:, 1]) - 420)
-                sh = min(xh, yh)
+                sh = self.halfImSize
 
             print("Trimming all frames to %.0fx%.0f pixels" % (2 * sh, 2 * sh))
-            data = data[
-                :,
-                ww_max[i, 0] - sh : ww_max[i, 0] + sh,
-                ww_max[i, 1] - sh : ww_max[i, 1] + sh,
-            ].copy()
-            erro = erro[
-                :,
-                ww_max[i, 0] - sh : ww_max[i, 0] + sh,
-                ww_max[i, 1] - sh : ww_max[i, 1] + sh,
-            ].copy()
+            
+            dataCopy = data.copy()
+            erroCopy = erro.copy()
+            for i in range(data.shape[0]):
+                data = dataCopy[
+                    :,
+                    ww_max[i, 0] - sh : ww_max[i, 0] + sh,
+                    ww_max[i, 1] - sh : ww_max[i, 1] + sh,
+                ].copy()
+                erro = erroCopy[
+                    :,
+                    ww_max[i, 0] - sh : ww_max[i, 0] + sh,
+                    ww_max[i, 1] - sh : ww_max[i, 1] + sh,
+                ].copy()
             sy, sx = data.shape[-2:]
 
         # PSCALE = np.sqrt(hdul['SCI'].header['PIXAR_A2'])*1000. # mas
@@ -429,6 +439,8 @@ class recenter_frames:
                     filter_allowed = wave_nircam.keys()
                 elif INSTRUME == "NIRISS":
                     filter_allowed = wave_niriss.keys()
+                elif INSTRUME == "MIRI":
+                    filter_allowed = wave_miri.keys()
             if FILTER not in filter_allowed:
                 raise UserWarning("Unknown filter")
 
@@ -446,6 +458,12 @@ class recenter_frames:
                     self.pupil_path = os.path.join(PUPIL_DIR, default_pupil)
                 wave = wave_niriss[FILTER] * 1e-6  # m
                 weff = weff_niriss[FILTER] * 1e-6  # m
+            elif INSTRUME == "MIRI":
+                if self.pupil_path is None:
+                    default_pupil = "miri_clear_pupil.fits"
+                    self.pupil_path = os.path.join(PUPIL_DIR, default_pupil)
+                wave = wave_miri[FILTER] * 1e-6  # m
+                weff = weff_miri[FILTER] * 1e-6  # m
 
             # print('Rotating pupil model by %.2f deg (counter-clockwise)' % V3I_YANG)
 
@@ -877,8 +895,10 @@ class extract_kerphase:
         # Initialize the step parameters.
         self.skip = False
         self.plot = True
-        self.instrume_allowed = ["NIRCAM", "NIRISS"]
+        self.instrume_allowed = ["NIRCAM", "NIRISS", "MIRI"]
         self.bmax = None  # m
+        self.trim_cent = None
+        self.halfImSize = 40
         self.pupil_path = None
         self.verbose = False
 
@@ -920,37 +940,47 @@ class extract_kerphase:
 
         # Copied from bad pixel cleaning script.
         if recenter_frames_obj.trim:
-            if INSTRUME != "NIRISS":
-                raise NotImplementedError("Trimming is implemented for NIRISS only")
+            if INSTRUME not in ["NIRISS", "MIRI"]:
+                raise NotImplementedError("Trimming is implemented for NIRISS and MIRI only")
             if data.ndim != 3:
                 raise NotImplementedError(
                     "Trimming is implemented for 3D data cube only"
                 )
-            ww_max = []
-            for i in range(data.shape[0]):
-                ww_max += [
-                    np.unravel_index(
-                        np.argmax(median_filter(data[i], size=3)), data[i].shape
-                    )
-                ]
-            ww_max = np.array(ww_max)
+            if self.trim_cent is None:
+                ww_max = []
+                for i in range(data.shape[0]):
+                    ww_max += [
+                        np.unravel_index(
+                            np.argmax(median_filter(data[i], size=3)), data[i].shape
+                        )
+                    ]
+                ww_max = np.array(ww_max)
+            else:
+                ww_max = np.array([[self.trim_cent[0], self.trim_cent[1]]]*data.shape[0])
 
-            # The bottom four rows are reference pixels.
-            yh = min(sy - np.max(ww_max[:, 0]), np.min(ww_max[:, 0]) - 4)
-            xh = min(sx - np.max(ww_max[:, 1]), np.min(ww_max[:, 1]) - 0)
-            sh = min(xh, yh)
+            if INSTRUME == "NIRISS":
+                # The bottom five rows are reference pixels.
+                yh = min(sy - np.max(ww_max[:, 0]), np.min(ww_max[:, 0]) - 5)
+                xh = min(sx - np.max(ww_max[:, 1]), np.min(ww_max[:, 1]) - 0)
+                sh = min(xh, yh)
+            elif INSTRUME == "MIRI":
+                sh = self.halfImSize
 
             print("Trimming all frames to %.0fx%.0f pixels" % (2 * sh, 2 * sh))
-            data = data[
-                :,
-                ww_max[i, 0] - sh : ww_max[i, 0] + sh,
-                ww_max[i, 1] - sh : ww_max[i, 1] + sh,
-            ].copy()
-            erro = erro[
-                :,
-                ww_max[i, 0] - sh : ww_max[i, 0] + sh,
-                ww_max[i, 1] - sh : ww_max[i, 1] + sh,
-            ].copy()
+            
+            dataCopy = data.copy()
+            erroCopy = erro.copy()
+            for i in range(data.shape[0]):
+                data = dataCopy[
+                    :,
+                    ww_max[i, 0] - sh : ww_max[i, 0] + sh,
+                    ww_max[i, 1] - sh : ww_max[i, 1] + sh,
+                ].copy()
+                erro = erroCopy[
+                    :,
+                    ww_max[i, 0] - sh : ww_max[i, 0] + sh,
+                    ww_max[i, 1] - sh : ww_max[i, 1] + sh,
+                ].copy()
             sy, sx = data.shape[-2:]
 
         # PSCALE = np.sqrt(hdul['SCI'].header['PIXAR_A2'])*1000. # mas
@@ -975,6 +1005,8 @@ class extract_kerphase:
                 filter_allowed = wave_nircam.keys()
             elif INSTRUME == "NIRISS":
                 filter_allowed = wave_niriss.keys()
+            elif INSTRUME == "MIRI":
+                filter_allowed = wave_miri.keys()
         if FILTER not in filter_allowed:
             raise UserWarning("Unknown filter")
 
@@ -991,6 +1023,12 @@ class extract_kerphase:
                 self.pupil_path = os.path.join(PUPIL_DIR, default_pupil)
             wave = wave_niriss[FILTER] * 1e-6  # m
             weff = weff_niriss[FILTER] * 1e-6  # m
+        elif INSTRUME == "MIRI":
+            if self.pupil_path is None:
+                default_pupil = "miri_clear_pupil.fits"
+                self.pupil_path = os.path.join(PUPIL_DIR, default_pupil)
+            wave = wave_miri[FILTER] * 1e-6  # m
+            weff = weff_miri[FILTER] * 1e-6  # m
 
         # print('Rotating pupil model by %.2f deg (counter-clockwise)' % V3I_YANG)
 

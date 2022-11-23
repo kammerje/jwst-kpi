@@ -124,6 +124,7 @@ def generate_pupil_model(
         Cutoff distance when symmetrizing model (must be < step size)
     rot_ang : float
         Rotation angle for pupil (applied to aperture from input FITS mask)
+        --> Rotate the entire model of rot_ang
     bmax : float
         Max baseline kept in pupil model (to avoid baselines outside of actual pupil)
     min_red : float
@@ -160,21 +161,30 @@ def generate_pupil_model(
         pxsc = hdul[0].header["PUPLSCAL"]  # m, pupil scale
     aper = aper[:-1, :-1]
     aper = shift(aper, (-0.5, -0.5))
+    
     if pad > 0:
         aper = np.pad(aper, ((pad, pad), (pad, pad)))
-    if np.abs(rot_ang) > 0.0:
-        aper = rotate(aper, rot_ang, order=1)
 
     if hex_grid:
         model, tmp = create_hex_model(aper, pxsc)
     else:
         model = create_discrete_model(aper, pxsc, step, binary=binary, tmin=tmin)
+        
     if symmetrize:
         if step <= 0.1:
             warnings.warn(
                 f"Symmetrize cut parameter ({cut}) should be smaller than step ({step})"
             )
         model = symetrizes_model(model, cut=cut)
+    
+    if np.abs(rot_ang) > 0.0:
+        th0 = rot_ang * np.pi / 180.0 # Rotation angle [rad]
+        rot_mat = np.array([[np.cos(th0), -np.sin(th0)],
+                          [np.sin(th0), np.cos(th0)]]) # Rotation matrix
+        model[:,:2] = model[:,:2].dot(rot_mat) # Rotate model = model*rotation_matrix
+        # Do we really want the original array to follow the rotation? (grey pupil model on graph)
+        tmp = rotate(tmp, rot_ang, reshape=False, order=1)
+
     if out_txt is not None:
         np.savetxt(out_txt, model, fmt="%+.10e %+.10e %.2f")
         kpi_args = dict(fname=out_txt)
@@ -183,6 +193,7 @@ def generate_pupil_model(
 
     kpi_args = {**kpi_args, **dict(bmax=bmax, hexa=hex_border)}
     KPI = kpi.KPI(**kpi_args)
+    
     if min_red > 0:
         KPI.filter_baselines(KPI.RED > min_red)
     KPI.package_as_fits(fname=out_fits)
@@ -240,8 +251,28 @@ if __name__ == "__main__":
         **dict(input_mask="CLEAR", out_fits=output_dir / "nircam_clear_pupil.fits"),
         **base_dict,
     }
+    
+    miri_clear_dict = {
+        **dict(
+            input_mask="CLEAR",
+            step=0.3,
+            tmin=0.1,
+            binary=False,
+            symmetrize=False,
+            pad=50,
+            cut=0.1,
+            rot_ang=5.0,
+            bmax=None,
+            min_red=10.0,
+            hex_border=True,
+            hex_grid=True,
+            show=True,
+            out_fits=output_dir / "miri_clear_pupil.fits",
+            ),
+    }
 
-    models = [niriss_clearp_dict, nircam_clear_dict]
+    
+    models = [niriss_clearp_dict, nircam_clear_dict, miri_clear_dict]
 
     for model in models:
         KPI = generate_pupil_model(**model)
