@@ -1,7 +1,7 @@
 """
 JWST stage 3 pipeline for kernel phase imaging.
 
-Authors: Jens Kammerer, Thomas Vandal
+Authors: Jens Kammerer, Thomas Vandal, Katherine Thibault
 Supported instruments: NIRCam, NIRISS, MIRI
 """
 
@@ -64,7 +64,6 @@ gain = {"NIRCAM_SHORT": 2.05, "NIRCAM_LONG": 1.82, "NIRISS": 1.61, "MIRI": 5.5} 
 # =============================================================================
 # CLASSES
 # =============================================================================
-
 
 class Kpi3Pipeline:
     """
@@ -341,8 +340,8 @@ class recenter_frames:
         self.instrume_allowed = ["NIRCAM", "NIRISS", "MIRI"]
         self.trim = True
         self.trim_cent = None
-        self.halfImSize = 40
-        self.bmax = 6.0  # m
+        self.halfImSize = 40 # pix
+        self.bmax = 6.0 # m
         self.pupil_path = None
         self.verbose = False
 
@@ -414,6 +413,12 @@ class recenter_frames:
                     ww_max[i, 1] - sh : ww_max[i, 1] + sh,
                 ].copy()
             sy, sx = data.shape[-2:]
+
+        # Simple background subtraction to avoid discontinuity when zero-padding the data in XARA.
+        if data.ndim == 2:
+            data -= np.median(data)
+        elif data.ndim == 3:
+            data -= np.median(data, axis=(1, 2), keepdims=True)
 
         # PSCALE = np.sqrt(hdul['SCI'].header['PIXAR_A2'])*1000. # mas
         if INSTRUME == "NIRCAM":
@@ -897,8 +902,6 @@ class extract_kerphase:
         self.plot = True
         self.instrume_allowed = ["NIRCAM", "NIRISS", "MIRI"]
         self.bmax = None  # m
-        self.trim_cent = None
-        self.halfImSize = 40
         self.pupil_path = None
         self.verbose = False
 
@@ -946,7 +949,7 @@ class extract_kerphase:
                 raise NotImplementedError(
                     "Trimming is implemented for 3D data cube only"
                 )
-            if self.trim_cent is None:
+            if recenter_frames_obj.trim_cent is None:
                 ww_max = []
                 for i in range(data.shape[0]):
                     ww_max += [
@@ -956,7 +959,7 @@ class extract_kerphase:
                     ]
                 ww_max = np.array(ww_max)
             else:
-                ww_max = np.array([[self.trim_cent[0], self.trim_cent[1]]]*data.shape[0])
+                ww_max = np.array([[recenter_frames_obj.trim_cent[0], recenter_frames_obj.trim_cent[1]]]*data.shape[0])
 
             if INSTRUME == "NIRISS":
                 # The bottom five rows are reference pixels.
@@ -964,7 +967,7 @@ class extract_kerphase:
                 xh = min(sx - np.max(ww_max[:, 1]), np.min(ww_max[:, 1]) - 0)
                 sh = min(xh, yh)
             elif INSTRUME == "MIRI":
-                sh = self.halfImSize
+                sh = recenter_frames_obj.halfImSize
 
             print("Trimming all frames to %.0fx%.0f pixels" % (2 * sh, 2 * sh))
             
@@ -982,6 +985,12 @@ class extract_kerphase:
                     ww_max[i, 1] - sh : ww_max[i, 1] + sh,
                 ].copy()
             sy, sx = data.shape[-2:]
+
+        # Simple background subtraction to avoid discontinuity when zero-padding the data in XARA.
+        if data.ndim == 2:
+            data -= np.median(data)
+        elif data.ndim == 3:
+            data -= np.median(data, axis=(1, 2), keepdims=True)
 
         # PSCALE = np.sqrt(hdul['SCI'].header['PIXAR_A2'])*1000. # mas
         if INSTRUME == "NIRCAM":
@@ -1182,7 +1191,7 @@ class extract_kerphase:
                     )
                     erro_recentered += [temp]
 
-                    if self.verbose:
+                    if recenter_frames_obj.verbose:
                         print("Image shift = (%.2f, %.2f)" % (dx[i], dy[i]))
                 data_recentered = np.array(data_recentered)
                 erro_recentered = np.array(erro_recentered)
