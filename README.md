@@ -1,6 +1,7 @@
 # JWST stage 3 pipeline for kernel phase imaging.
 
 Authors: Jens Kammerer, Thomas Vandal, Katherine Thibault, Frantz Martinache
+
 Supported instruments: NIRCam, NIRISS, MIRI
 
 This package provides a pipeline to extract kernel phases from JWST data. The code aims to replicate the interface of the official JWST data reduction pipeline to provide a custom stage 3 kernel phase pipeline that outputs [KPFITS](https://ui.adsabs.harvard.edu/abs/2022arXiv221017528K/abstract) files. The pipeline is based on the XARA[^1] package and uses stage 2 calibrated ("cal" or "calints") products from the official JWST data reduction pipeline. 
@@ -49,7 +50,7 @@ available. There are examples for processing [NIRCam](examples/test_kpi_nircam.p
 A discrete representation of the pupil is required for the kernel phase extraction. Default
 pupil models for all supported instruments are provided with the
 package, but users can generate their own pupil models with [XARA](https://github.com/fmartinache/xara) or [XAOSIM](https://github.com/fmartinache/xaosim) and use them in
-the pipeline. We provide [a script](examples/generate_pupil_model.py) showing
+the pipeline. We provide a [script](examples/generate_pupil_model.py) showing
 how the default pupil models were generated. It can be used and adapted to generate custom pupil
 models. If you find a pupil model that performs better than the default one,
 feel free to open an Issue or a PR!
