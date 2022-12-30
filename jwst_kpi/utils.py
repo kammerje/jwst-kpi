@@ -1,70 +1,73 @@
+from __future__ import division
+
+import matplotlib
+matplotlib.rcParams.update({'font.size': 14})
+
+
+# =============================================================================
+# IMPORTS
+# =============================================================================
+
+import os
+import pdb
+import sys
+
+import astropy.io.fits as pyfits
+import matplotlib.pyplot as plt
+import numpy as np
+
+from astropy.io.fits.hdu.hdulist import HDUList
 from pathlib import Path
 from typing import Optional, Union
 
-from astropy.io import fits
-from astropy.io.fits.hdu.hdulist import HDUList
 
+# =============================================================================
+# MAIN
+# =============================================================================
 
-def split_file_path(fpath: Union[Path, str]):
-    fpath = Path(fpath)
-    suffixes = fpath.suffixes[-2:]
+def split_file_path(
+    file: Union[Path, str],
+):
+
+    file_path = Path(file)
+    suffixes = file_path.suffixes[-2:]
     n_suffixes = len(suffixes)
     fext = "".join(suffixes)
-    pdir = str(fpath.parent)
-    fstem = fpath
+    parent_dir = str(file_path.parent)
+    file_stem = file_path
     for _ in range(n_suffixes):
-        fstem = Path(fstem.stem)
-    fstem = str(fstem)
+        file_stem = Path(file_stem.stem)
+    file_stem = str(file_stem)
 
-    return pdir, fstem, fext
-
-
-def get_output_base(
-    input_path: Union[Path, str], output_dir: Optional[Union[Path, str]] = None
-):
-    input_path = Path(input_path)
-    parent_dir, fstem, _ = split_file_path(input_path)
-    if output_dir is None:
-        output_base = Path(parent_dir) / fstem
-    else:
-        output_base = Path(output_dir) / fstem
-
-    return str(output_base)
-
+    return parent_dir, file_stem, fext
 
 def open_fits(
-    original_fpath: Union[Path, str],
+    file: Union[Path, str],
     suffix: Optional[str] = None,
-    dirpath: Optional[Union[str, Path]] = None,
+    file_dir: Optional[Union[str, Path]] = None,
 ):
-    fpath = Path(original_fpath)
 
+    file_path = Path(file)
     suffix = suffix or ""
-
-    if suffix == "":
-        open_path = fpath
+    parent_dir, file_stem, fext = split_file_path(file_path)
+    basename = file_stem + suffix + fext # handle compressed files, e.g., fits.gz
+    if file_dir is None:
+        file_path = Path(parent_dir) / basename
     else:
-        pdir, fstem, fext = split_file_path(fpath)
-        # Handle potential compressed files (e.g. fits.gz)
-        basename = fstem + suffix + fext
+        file_path = Path(file_dir) / basename
 
-        if dirpath is None:
-            open_path = Path(pdir) / basename
-        else:
-            open_path = Path(dirpath) / basename
+    return pyfits.open(file_path)
 
-    return fits.open(open_path)
+def get_output_base(
+    file: Union[Path, str],
+    output_dir: Optional[Union[Path, str]] = None,
+):
 
+    file_path = Path(file)
+    parent_dir, file_stem, _ = split_file_path(file_path)
+    if output_dir is None:
+        output_base = Path(parent_dir) / file_stem
+    else:
+        output_base = Path(output_dir) / file_stem
 
-def get_data(hdul: HDUList):
-    try:
-        data = hdul["SCI-MOD"].data
-        erro = hdul["ERR-MOD"].data
-    except KeyError:
-        data = hdul["SCI"].data
-        erro = hdul["ERR"].data
-
-    if data.ndim not in [2, 3]:
-        raise ValueError("Only implemented for 2D image/3D data cube")
-    sy, sx = data.shape[-2:]
-    return data, erro, sx, sy
+    return str(output_base)
