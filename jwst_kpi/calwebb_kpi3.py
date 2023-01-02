@@ -760,13 +760,21 @@ class recenter_frames:
             # Get pupil model path and filter properties.
             if INSTRUME == "NIRCAM":
                 if self.pupil_path is None:
-                    default_pupil_model = "nircam_clear_pupil.fits"
+                    if hdul[0].header["PUPIL"] == "MASKRND":
+                        default_pupil_model = "nircam_rnd_pupil.fits"
+                    elif hdul[0].header["PUPIL"] == "MASKBAR":
+                        default_pupil_model = "nircam_bar_pupil.fits"
+                    else:
+                        default_pupil_model = "nircam_clear_pupil.fits"
                     self.pupil_path = os.path.join(PUPIL_DIR, default_pupil_model)
                 wave = wave_nircam[FILTER] * 1e-6 # m
                 weff = weff_nircam[FILTER] * 1e-6 # m
             elif INSTRUME == "NIRISS":
                 if self.pupil_path is None:
-                    default_pupil_model = "niriss_clear_pupil.fits"
+                    if hdul[0].header["PUPIL"] == "NRM":
+                        default_pupil_model = "niriss_nrm_pupil.fits"
+                    else:
+                        default_pupil_model = "niriss_clear_pupil.fits"
                     self.pupil_path = os.path.join(PUPIL_DIR, default_pupil_model)
                 wave = wave_niriss[FILTER] * 1e-6 # m
                 weff = weff_niriss[FILTER] * 1e-6 # m
@@ -776,7 +784,7 @@ class recenter_frames:
                     self.pupil_path = os.path.join(PUPIL_DIR, default_pupil_model)
                 wave = wave_miri[FILTER] * 1e-6 # m
                 weff = weff_miri[FILTER] * 1e-6 # m
-
+            
             # print("Rotating pupil model by %.2f deg (counter-clockwise)" % V3I_YANG)
 
             # # Rotate pupil model.
@@ -1280,13 +1288,21 @@ class extract_kerphase:
         # Get pupil model path and filter properties.
         if INSTRUME == "NIRCAM":
             if self.pupil_path is None:
-                default_pupil_model = "nircam_clear_pupil.fits"
+                if hdul[0].header["PUPIL"] == "MASKRND":
+                    default_pupil_model = "nircam_rnd_pupil.fits"
+                elif hdul[0].header["PUPIL"] == "MASKBAR":
+                    default_pupil_model = "nircam_bar_pupil.fits"
+                else:
+                    default_pupil_model = "nircam_clear_pupil.fits"
                 self.pupil_path = os.path.join(PUPIL_DIR, default_pupil_model)
             wave = wave_nircam[FILTER] * 1e-6 # m
             weff = weff_nircam[FILTER] * 1e-6 # m
         elif INSTRUME == "NIRISS":
             if self.pupil_path is None:
-                default_pupil_model = "niriss_clear_pupil.fits"
+                if hdul[0].header["PUPIL"] == "NRM":
+                    default_pupil_model = "niriss_nrm_pupil.fits"
+                else:
+                    default_pupil_model = "niriss_clear_pupil.fits"
                 self.pupil_path = os.path.join(PUPIL_DIR, default_pupil_model)
             wave = wave_niriss[FILTER] * 1e-6 # m
             weff = weff_niriss[FILTER] * 1e-6 # m

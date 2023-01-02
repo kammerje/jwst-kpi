@@ -59,8 +59,9 @@ feel free to open an Issue or a PR!
 
 The most recent major update brings new functionality and simplified usage:
 * Both 2D cal and 3D calints data can now be processed.
-* There is a new trim frames step. It is possible to specify the center and the size of the trimmed frames. With this new step, the pipeline is now running in the following order: trim frames, fix bad pixels, recenter frames, window frames, extract kerphase, empirical uncertainties.
+* There is a new trim frames step. It is possible to specify the center and the size of the trimmed frames. With this new step, the pipeline is now running the steps in the following order: trim frames, fix bad pixels, recenter frames, window frames, extract kerphase, empirical uncertainties.
 * It is now possible to provide a list of good frames and extract the kernel phase only from those.
+* Improved pupil models and new pupil models for the NIRCam coronagraphy Lyot stops.
 * Improved diagnostic plots.
 * Improved file outputs.
 * Simplification of the code by always transforming input data to 3D calints data.

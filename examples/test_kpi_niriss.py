@@ -57,7 +57,7 @@ pipe3.window_frames.wrad = 24 # pix; radius of super-Gaussian window mask
 # Kernel phase extraction step.
 pipe3.extract_kerphase.skip = False # skip step?
 pipe3.extract_kerphase.plot = True # make and save plots?
-pipe3.extract_kerphase.bmax = 5. # m; maximum baseline length for kernel phase extraction; if None, uses entire pupil model
+pipe3.extract_kerphase.bmax = None # m; maximum baseline length for kernel phase extraction; if None, uses entire pupil model
 pipe3.extract_kerphase.pupil_path = None # path of custom XARA pupil model to be used; if None, uses default model
 
 # Empirical uncertainties step.
