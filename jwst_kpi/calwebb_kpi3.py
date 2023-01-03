@@ -269,9 +269,10 @@ class trim_frames:
         print("--> Running trim frames step...")
 
         # Open file.
-        if suffix != "":
-            raise UserWarning("Requires stage 2-calibrated pipeline product")
-        hdul = ut.open_fits(file, suffix=suffix, file_dir=output_dir)
+        if suffix == "":
+            hdul = ut.open_fits(file, suffix=suffix, file_dir=None)
+        else:
+            hdul = ut.open_fits(file, suffix=suffix, file_dir=output_dir)
         data = hdul["SCI"].data
         erro = hdul["ERR"].data
         pxdq = hdul["DQ"].data
@@ -515,7 +516,10 @@ class fix_bad_pixels:
         print("--> Running fix bad pixels step...")
 
         # Open file.
-        hdul = ut.open_fits(file, suffix=suffix, file_dir=output_dir)
+        if suffix == "":
+            hdul = ut.open_fits(file, suffix=suffix, file_dir=None)
+        else:
+            hdul = ut.open_fits(file, suffix=suffix, file_dir=output_dir)
         data = hdul["SCI"].data
         erro = hdul["ERR"].data
         pxdq = hdul["DQ"].data
@@ -707,7 +711,10 @@ class recenter_frames:
         print("--> Running recenter frames step...")
 
         # Open file.
-        hdul = ut.open_fits(file, suffix=suffix, file_dir=output_dir)
+        if suffix == "":
+            hdul = ut.open_fits(file, suffix=suffix, file_dir=None)
+        else:
+            hdul = ut.open_fits(file, suffix=suffix, file_dir=output_dir)
         data = hdul["SCI"].data
         erro = hdul["ERR"].data
         if data.ndim not in [2, 3]:
@@ -1018,7 +1025,10 @@ class window_frames:
         print("--> Running window frames step...")
 
         # Open file.
-        hdul = ut.open_fits(file, suffix=suffix, file_dir=output_dir)
+        if suffix == "":
+            hdul = ut.open_fits(file, suffix=suffix, file_dir=None)
+        else:
+            hdul = ut.open_fits(file, suffix=suffix, file_dir=output_dir)
         data = hdul["SCI"].data
         erro = hdul["ERR"].data
         if data.ndim not in [2, 3]:
@@ -1220,7 +1230,10 @@ class extract_kerphase:
         print("--> Running extract kerphase step...")
 
         # Open file.
-        hdul = ut.open_fits(file, suffix=suffix, file_dir=output_dir)
+        if suffix == "":
+            hdul = ut.open_fits(file, suffix=suffix, file_dir=None)
+        else:
+            hdul = ut.open_fits(file, suffix=suffix, file_dir=output_dir)
         data = hdul["SCI"].data
         erro = hdul["ERR"].data
         pxdq = hdul["DQ"].data
@@ -1588,7 +1601,7 @@ class extract_kerphase:
         hdu_lam = pyfits.BinTableHDU.from_columns([cwavel, bwidth])
         hdu_lam.header["EXTNAME"] = "CWAVEL"
         hdul += [hdu_lam]
-        hdu_ang = pyfits.ImageHDU(np.array([V3I_YANG] * data_good.shape[0])) # deg
+        hdu_ang = pyfits.ImageHDU(np.array([hdul["SCI"].header["ROLL_REF"]+V3I_YANG] * data_good.shape[0])) # deg
         hdu_ang.header["EXTNAME"] = "DETPA"
         hdul += [hdu_ang]
         temp = np.zeros((2, data_good.shape[0], 1, hdul["KER-MAT"].data.shape[1]))
@@ -1649,7 +1662,10 @@ class empirical_uncertainties:
         print("--> Running empirical uncertainties step...")
 
         # Open file.
-        hdul = ut.open_fits(file, suffix=suffix, file_dir=output_dir)
+        if suffix == "":
+            hdul = ut.open_fits(file, suffix=suffix, file_dir=None)
+        else:
+            hdul = ut.open_fits(file, suffix=suffix, file_dir=output_dir)
         kpdat = hdul["KP-DATA"].data
         kpsig = hdul["KP-SIGM"].data
         kpcov = hdul["KP-COV"].data
