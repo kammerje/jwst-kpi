@@ -7,8 +7,10 @@ from jwst import datamodels
 from jwst.stpipe import Step
 from xara import core, kpo
 
+
 from . import pupil_data
 from ..constants import pscale, wave_nircam, wave_niriss, wave_miri, weff_nircam, weff_niriss, weff_miri
+from .extract_kerphase_plots import plot_kerphase
 # from . import utils as ut
 
 PUPIL_DIR = pupil_data.__path__[0]
@@ -339,6 +341,7 @@ class ExtractKerphaseStep(Step):
 
         # Plot.
         if self.plot:
+            plot_kerphase(data, KPO, m2pix, kpcor, kpsig, good_frames=good_frames)
             plt.savefig(path + suffix_out + ".pdf")
             if self.show_plots:
                 plt.show()

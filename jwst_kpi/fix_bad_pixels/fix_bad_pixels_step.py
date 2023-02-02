@@ -1,6 +1,5 @@
 import os
 
-import matplotlib.patheffects as PathEffects
 import matplotlib.pyplot as plt
 import numpy as np
 # from astropy.io import fits
@@ -9,6 +8,7 @@ from jwst import datamodels
 from scipy.ndimage import median_filter
 
 # from .. import utils as ut
+from .fix_bad_pixels_plots import plot_badpix
 
 # Bad pixel flags.
 # https://jwst-reffiles.stsci.edu/source/data_quality.html
@@ -181,73 +181,7 @@ class FixBadPixelsStep(Step):
 
         # Plot.
         if self.plot:
-            plt.ioff()
-            f, ax = plt.subplots(1, 3, figsize=(2.25 * 6.4, 0.75 * 4.8))
-            if good_frames is None:
-                p0 = ax[0].imshow(mask[0], origin="lower")
-            else:
-                p0 = ax[0].imshow(mask[good_frames[0]], origin="lower")
-            plt.colorbar(p0, ax=ax[0])
-            t0 = ax[0].text(
-                0.01,
-                0.01,
-                bb,
-                color="white",
-                ha="left",
-                va="bottom",
-                transform=ax[0].transAxes,
-                size=12,
-            )
-            t0.set_path_effects(
-                [PathEffects.withStroke(linewidth=3, foreground="black")]
-            )
-            ax[0].set_title(
-                "Bad pixel map",
-                y=1.0,
-                pad=-20,
-                bbox=dict(facecolor="white", edgecolor="lightgrey", boxstyle="round"),
-            )
-            if good_frames is None:
-                p1 = ax[1].imshow(np.log10(np.abs(data[0])), origin="lower")
-            else:
-                p1 = ax[1].imshow(
-                    np.log10(np.abs(data[good_frames[0]])), origin="lower"
-                )
-            plt.colorbar(p1, ax=ax[1])
-            ax[1].set_title(
-                "Frame (log)",
-                y=1.0,
-                pad=-20,
-                bbox=dict(facecolor="white", edgecolor="lightgrey", boxstyle="round"),
-            )
-            if good_frames is None:
-                p2 = ax[2].imshow(np.log10(np.abs(data_bpfixed[0])), origin="lower")
-            else:
-                p2 = ax[2].imshow(
-                    np.log10(np.abs(data_bpfixed[good_frames[0]])), origin="lower"
-                )
-            plt.colorbar(p2, ax=ax[2])
-            t2 = ax[2].text(
-                0.01,
-                0.01,
-                "method = " + self.method,
-                color="white",
-                ha="left",
-                va="bottom",
-                transform=ax[2].transAxes,
-                size=12,
-            )
-            t2.set_path_effects(
-                [PathEffects.withStroke(linewidth=3, foreground="black")]
-            )
-            ax[2].set_title(
-                "Fixed frame (log)",
-                y=1.0,
-                pad=-20,
-                bbox=dict(facecolor="white", edgecolor="lightgrey", boxstyle="round"),
-            )
-            plt.suptitle("Fix bad pixels step", size=18)
-            plt.tight_layout()
+            plot_badpix(data, data_bpfixed, bb, mask, good_frames, method=self.method)
             plt.savefig(path + suffix_out + ".pdf")
             if self.show_plots:
                 plt.show()
