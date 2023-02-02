@@ -1,11 +1,14 @@
+import os
+
 import matplotlib.patheffects as PathEffects
 import matplotlib.pyplot as plt
 import numpy as np
-from astropy.io import fits
+# from astropy.io import fits
+from jwst.stpipe import Step
+from jwst import datamodels
 from scipy.ndimage import median_filter
 
-
-from .. import utils as ut
+# from .. import utils as ut
 
 # Bad pixel flags.
 # https://jwst-reffiles.stsci.edu/source/data_quality.html
@@ -41,7 +44,7 @@ pxdq_flags = {
 }
 
 
-class fix_bad_pixels:
+class FixBadPixelsStep(Step):
     """
     Fix bad pixels.
 
@@ -50,26 +53,22 @@ class fix_bad_pixels:
               https://ui.adsabs.harvard.edu/abs/2013MNRAS.433.1718I/abstract
     """
 
-    def __init__(self):
-        """
-        Initialize the pipeline step.
-        """
+    class_alias = "fix_bad_pixels"
 
-        # Initialize the step parameters.
-        self.skip = False
-        self.plot = True
-        self.bad_bits = ["DO_NOT_USE"]
-        self.bad_bits_allowed = pxdq_flags.keys()
-        self.method = "medfilt"
-        self.method_allowed = ["medfilt", "fourier"]
+    spec = """
+        plot = boolean(default=True)
+        method = string(default='medfilt')
+        previous_suffix = string(default=None)
+        bad_bits = string_list(default=['DO_NOT_USE'])
+        method_allowed = string_list(default=['medfilt', 'fourier'])
+        bad_bits_allowed = string_list(default=None)
+        show_plots = boolean(default=False)
+        good_frames = int_list(default=None)
+    """
 
-    def step(
+    def process(
         self,
-        file,
-        suffix,
-        output_dir=None,
-        show_plots=False,
-        good_frames=None,
+        input_data,
     ):
         """
         Run the pipeline step.
@@ -78,9 +77,6 @@ class fix_bad_pixels:
         ----------
         file: str
             Path to stage 2-calibrated pipeline product.
-        suffix: str
-            Suffix for the file path to find the product from the previous
-            step.
         output_dir: str
             Output directory, if None uses same directory as input file.
         show_plots: bool
@@ -89,16 +85,23 @@ class fix_bad_pixels:
             List of good frames, bad frames will be skipped.
         """
 
-        print("--> Running fix bad pixels step...")
+        self.log.info("--> Running fix bad pixels step...")
+
+        bad_bits_allowed = self.bad_bits_allowed or list(pxdq_flags.keys())
+        good_frames = self.good_frames
 
         # Open file.
-        if suffix == "":
-            hdul = ut.open_fits(file, suffix=suffix, file_dir=None)
+        if self.previous_suffix is None:
+            input_models = datamodels.open(input_data)
         else:
-            hdul = ut.open_fits(file, suffix=suffix, file_dir=output_dir)
-        data = hdul["SCI"].data
-        erro = hdul["ERR"].data
-        pxdq = hdul["DQ"].data
+            raise ValueError("Unexpected previous_suffix attribute")
+        # if suffix == "":
+        #     hdul = ut.open_fits(file, suffix=suffix, file_dir=None)
+        # else:
+        #     hdul = ut.open_fits(file, suffix=suffix, file_dir=output_dir)
+        data = input_models.data
+        erro = input_models.err
+        pxdq = input_models.dq
         if data.ndim not in [2, 3]:
             raise UserWarning("Only implemented for 2D image/3D data cube")
         if data.ndim == 2:
@@ -124,12 +127,12 @@ class fix_bad_pixels:
                 )
 
         # Suffix for the file path from the current step.
-        suffix_out = "_bpfixed"
+        suffix_out = f"_{self.suffix or self.default_suffix()}"
 
         # Make bad pixel map.
         mask = pxdq < 0
         for i in range(len(self.bad_bits)):
-            if self.bad_bits[i] not in self.bad_bits_allowed:
+            if self.bad_bits[i] not in bad_bits_allowed:
                 raise UserWarning("Unknown data quality flag")
             else:
                 pxdq_flag = pxdq_flags[self.bad_bits[i]]
@@ -139,7 +142,7 @@ class fix_bad_pixels:
                 else:
                     bb += ", " + self.bad_bits[i]
 
-        print(
+        self.log.info(
             "--> Found %.0f bad pixels (%.2f%%)"
             % (
                 np.sum(mask[good_frames]),
@@ -172,7 +175,9 @@ class fix_bad_pixels:
                 )
 
         # Get output file path.
-        path = ut.get_output_base(file, output_dir=output_dir)
+        # path = ut.get_output_base(file, output_dir=output_dir)
+        mk_path = self.make_output_path()
+        path = os.path.splitext(mk_path)[0]
 
         # Plot.
         if self.plot:
@@ -244,26 +249,33 @@ class fix_bad_pixels:
             plt.suptitle("Fix bad pixels step", size=18)
             plt.tight_layout()
             plt.savefig(path + suffix_out + ".pdf")
-            if show_plots:
+            if self.show_plots:
                 plt.show()
             plt.close()
 
         # Save file.
+        # TODO: Mark step completed
+        # TODO: How add keywords in pipeline?
+        # TODO: Add mask ext
+        # TODO: Might want to just save this direclty here instead of using default saving mech
+        output_models = input_models.copy()
         if is2d:
             data_bpfixed = data_bpfixed[0]
             erro_bpfixed = erro_bpfixed[0]
             mask = mask[0]
-        hdul["SCI"].data = data_bpfixed
-        hdul["SCI"].header["FIX_METH"] = self.method
-        hdul["ERR"].data = erro_bpfixed
-        hdul["ERR"].header["FIX_METH"] = self.method
-        hdu_dq_mod = fits.ImageHDU(mask.astype("uint32"))
-        hdu_dq_mod.header["EXTNAME"] = "DQ-MOD"
-        hdu_dq_mod.header["BAD_BITS"] = bb
-        hdul += [hdu_dq_mod]
-        hdul.writeto(path + suffix_out + ".fits", output_verify="fix", overwrite=True)
-        hdul.close()
+        output_models.data = data_bpfixed
+        output_models.err = erro_bpfixed
+        # hdul["SCI"].data = data_bpfixed
+        # hdul["SCI"].header["FIX_METH"] = self.method
+        # hdul["ERR"].data = erro_bpfixed
+        # hdul["ERR"].header["FIX_METH"] = self.method
+        # hdu_dq_mod = fits.ImageHDU(mask.astype("uint32"))
+        # hdu_dq_mod.header["EXTNAME"] = "DQ-MOD"
+        # hdu_dq_mod.header["BAD_BITS"] = bb
+        # hdul += [hdu_dq_mod]
+        # hdul.writeto(path + suffix_out + ".fits", output_verify="fix", overwrite=True)
+        # hdul.close()
 
-        print("--> Fix bad pixels step done")
+        self.log.info("--> Fix bad pixels step done")
 
-        return suffix_out
+        return output_models

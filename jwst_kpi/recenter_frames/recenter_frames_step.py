@@ -3,88 +3,41 @@ import os
 import matplotlib.patheffects as PathEffects
 import matplotlib.pyplot as plt
 import numpy as np
-from astropy.io import fits
-from astroquery.svo_fps import SvoFps
+# from astropy.io import fits
+from jwst import datamodels
+from jwst.stpipe import Step
 from xara import core, kpo
 
 from . import pupil_data
-from . import utils as ut
+from ..constants import pscale, wave_nircam, wave_niriss, wave_miri, weff_nircam, weff_niriss, weff_miri
+# from . import utils as ut
 
 PUPIL_DIR = pupil_data.__path__[0]
 
-# Detector pixel scales.
-# TODO: assumes that NIRISS pixels are square but they are slightly
-#       rectangular.
-# TODO: Move to access from many files
-# https://jwst-docs.stsci.edu/jwst-near-infrared-camera/nircam-instrumentation/nircam-detector-overview
-# https://jwst-docs.stsci.edu/jwst-near-infrared-imager-and-slitless-spectrograph/niriss-instrumentation/niriss-detector-overview
-# https://jwst-docs.stsci.edu/jwst-mid-infrared-instrument/miri-instrumentation/miri-detector-overview
-pscale = {
-    "NIRCAM_SHORT": 31.0,  # mas
-    "NIRCAM_LONG": 63.0,  # mas
-    "NIRISS": 65.55,  # mas
-    "MIRI": 110.0,  # mas
-}
 
-# TODO: Encapsulate this somewhere else and call when needed?
-# TODO: Move to access from many files
-# Load the NIRCam, NIRISS, and MIRI filters from the SVO Filter Profile
-# Service.
-# http://svo2.cab.inta-csic.es/theory/fps/
-wave_nircam = {}
-weff_nircam = {}
-filter_list = SvoFps.get_filter_list(facility="JWST", instrument="NIRCAM")
-for i in range(len(filter_list)):
-    name = filter_list["filterID"][i]
-    name = name[name.rfind(".") + 1 :]
-    wave_nircam[name] = filter_list["WavelengthMean"][i] / 1e4  # micron
-    weff_nircam[name] = filter_list["WidthEff"][i] / 1e4  # micron
-wave_niriss = {}
-weff_niriss = {}
-filter_list = SvoFps.get_filter_list(facility="JWST", instrument="NIRISS")
-for i in range(len(filter_list)):
-    name = filter_list["filterID"][i]
-    name = name[name.rfind(".") + 1 :]
-    wave_niriss[name] = filter_list["WavelengthMean"][i] / 1e4  # micron
-    weff_niriss[name] = filter_list["WidthEff"][i] / 1e4  # micron
-wave_miri = {}
-weff_miri = {}
-filter_list = SvoFps.get_filter_list(facility="JWST", instrument="MIRI")
-for i in range(len(filter_list)):
-    name = filter_list["filterID"][i]
-    name = name[name.rfind(".") + 1 :]
-    wave_miri[name] = filter_list["WavelengthMean"][i] / 1e4  # micron
-    weff_miri[name] = filter_list["WidthEff"][i] / 1e4  # micron
-del filter_list
-
-
-class recenter_frames:
+class RecenterFramesStep(Step):
     """
     Recenter frames.
     """
 
-    def __init__(self):
-        """
-        Initialize the pipeline step.
-        """
+    class_alias = "recenter_frames"
 
-        # Initialize the step parameters.
-        self.skip = False
-        self.plot = True
-        self.method = "FPNM"
-        self.method_allowed = ["BCEN", "COGI", "FPNM"]
-        self.instrume_allowed = ["NIRCAM", "NIRISS", "MIRI"]
-        self.bmax = 6.0  # m
-        self.pupil_path = None
-        self.verbose = False
+    spec = """
+        plot = boolean(default=True)
+        previous_suffix = string(default=None)
+        method = string(default='FPNM')
+        method_allowed = string_list(default=['BCEN', 'COGI', 'FPNM'])
+        instrume_allowed = string_list(default=['NIRCAM', 'NIRISS', 'MIRI'])
+        bmax = float(default=6.0)
+        pupil_path = string(default=None)
+        verbose = boolean(default=False)
+        show_plots = boolean(default=False)
+        good_frames = int_list(default=None)
+    """
 
-    def step(
+    def process(
         self,
-        file,
-        suffix,
-        output_dir=None,
-        show_plots=False,
-        good_frames=None,
+        input_data,
     ):
         """
         Run the pipeline step.
@@ -104,15 +57,22 @@ class recenter_frames:
             List of good frames, bad frames will be skipped.
         """
 
-        print("--> Running recenter frames step...")
+        self.log.info("--> Running recenter frames step...")
 
-        # Open file.
-        if suffix == "":
-            hdul = ut.open_fits(file, suffix=suffix, file_dir=None)
+        good_frames = self.good_frames
+
+        # Open file. Use default pipeline way unless "previous suffix is used"
+        # TODO: Mention this in PR
+        if self.previous_suffix is None:
+            input_models = datamodels.open(input_data)
         else:
-            hdul = ut.open_fits(file, suffix=suffix, file_dir=output_dir)
-        data = hdul["SCI"].data
-        erro = hdul["ERR"].data
+            raise ValueError("Unexpected previous_suffix attribute")
+        # if suffix == "":
+        #     hdul = ut.open_fits(file, suffix=suffix, file_dir=None)
+        # else:
+        #     hdul = ut.open_fits(file, suffix=suffix, file_dir=output_dir)
+        data = input_models.data
+        erro = input_models.err
         if data.ndim not in [2, 3]:
             raise UserWarning("Only implemented for 2D image/3D data cube")
         if data.ndim == 2:
@@ -135,25 +95,25 @@ class recenter_frames:
                 raise UserWarning(
                     "Some of the provided good frames are outside the data range"
                 )
-        INSTRUME = hdul[0].header["INSTRUME"]
+        INSTRUME = input_models.meta.instrument.name
         if INSTRUME not in self.instrume_allowed:
             raise UserWarning("Unsupported instrument")
-        FILTER = hdul[0].header["FILTER"]
+        FILTER = input_models.meta.instrument.filter
 
         # Suffix for the file path from the current step.
-        suffix_out = "_recentered"
+        suffix_out = f"_{self.suffix or self.default_suffix()}"
 
         # Simple background subtraction to avoid discontinuity when zero-padding the data in XARA.
         data -= np.median(data, axis=(1, 2), keepdims=True)
 
         # Get detector pixel scale and position angle.
         if INSTRUME == "NIRCAM":
-            CHANNEL = hdul[0].header["CHANNEL"]
+            CHANNEL = input_models.meta.instrument.channel
             PSCALE = pscale[INSTRUME + "_" + CHANNEL]  # mas
         else:
             PSCALE = pscale[INSTRUME]  # mas
         V3I_YANG = (
-            -hdul["SCI"].header["V3I_YANG"] * hdul["SCI"].header["VPARITY"]
+            - input_models.meta.wcsinfo.v3yangle * data.meta.wcsinfo.vparity
         )  # deg, counter-clockwise
 
         if "FPNM" in self.method:
@@ -169,11 +129,12 @@ class recenter_frames:
                 raise UserWarning("Unknown filter")
 
             # Get pupil model path and filter properties.
+            pupil_name = input_models.meta.instrument.pupil
             if INSTRUME == "NIRCAM":
                 if self.pupil_path is None:
-                    if hdul[0].header["PUPIL"] == "MASKRND":
+                    if pupil_name == "MASKRND":
                         default_pupil_model = "nircam_rnd_pupil.fits"
-                    elif hdul[0].header["PUPIL"] == "MASKBAR":
+                    elif pupil_name == "MASKBAR":
                         default_pupil_model = "nircam_bar_pupil.fits"
                     else:
                         default_pupil_model = "nircam_clear_pupil.fits"
@@ -182,7 +143,7 @@ class recenter_frames:
                 weff = weff_nircam[FILTER] * 1e-6  # m
             elif INSTRUME == "NIRISS":
                 if self.pupil_path is None:
-                    if hdul[0].header["PUPIL"] == "NRM":
+                    if pupil_name == "NRM":
                         default_pupil_model = "niriss_nrm_pupil.fits"
                     else:
                         default_pupil_model = "niriss_clear_pupil.fits"
@@ -280,12 +241,15 @@ class recenter_frames:
                     erro_recentered += [erro[i]]
 
                 if self.verbose:
-                    print("Image shift = (%.2f, %.2f)" % (dx[-1], dy[-1]))
+                    self.log.info("Image shift = (%.2f, %.2f)" % (dx[-1], dy[-1]))
             data_recentered = np.array(data_recentered)
             erro_recentered = np.array(erro_recentered)
 
+        # TODO: Test and cleanup
         # Get output file path.
-        path = ut.get_output_base(file, output_dir=output_dir)
+        # path = ut.get_output_base(file, output_dir=output_dir)
+        mk_path = self.make_output_path()
+        path = os.path.splitext(mk_path)[0]
 
         # Plot.
         if self.plot:
@@ -361,35 +325,41 @@ class recenter_frames:
             plt.suptitle("Recenter frames step", size=18)
             plt.tight_layout()
             plt.savefig(path + suffix_out + ".pdf")
-            if show_plots:
+            if self.show_plots:
                 plt.show()
             plt.close()
 
         # Save file.
+        # TODO: Mark step completed
+        # TODO: How add keywords in pipeline?
+        # TODO: Might want to just save this direclty here instead of using default saving mech
         if is2d:
             data = data[0]
             erro = erro[0]
             data_recentered = data_recentered[0]
             erro_recentered = erro_recentered[0]
-        hdu_sci_org = fits.ImageHDU(data)
-        hdu_sci_org.header["EXTNAME"] = "SCI-ORG"
-        hdu_err_org = fits.ImageHDU(erro)
-        hdu_err_org.header["EXTNAME"] = "ERR-ORG"
-        hdul += [hdu_sci_org, hdu_err_org]
-        hdul["SCI"].data = data_recentered
-        hdul["ERR"].data = erro_recentered
-        if is2d:
-            xsh = fits.Column(name="XSHIFT", format="D", array=np.array([dx]))  # pix
-            ysh = fits.Column(name="YSHIFT", format="D", array=np.array([dy]))  # pix
-        else:
-            xsh = fits.Column(name="XSHIFT", format="D", array=np.array(dx))  # pix
-            ysh = fits.Column(name="YSHIFT", format="D", array=np.array(dy))  # pix
-        hdu_ims = fits.BinTableHDU.from_columns([xsh, ysh])
-        hdu_ims.header["EXTNAME"] = "IMSHIFT"
-        hdul += [hdu_ims]
-        hdul.writeto(path + suffix_out + ".fits", output_verify="fix", overwrite=True)
-        hdul.close()
+        output_models = input_models.copy()
+        output_models.data = data_recentered
+        output_models.err = erro_recentered
+        # hdu_sci_org = fits.ImageHDU(data)
+        # hdu_sci_org.header["EXTNAME"] = "SCI-ORG"
+        # hdu_err_org = fits.ImageHDU(erro)
+        # hdu_err_org.header["EXTNAME"] = "ERR-ORG"
+        # hdul += [hdu_sci_org, hdu_err_org]
+        # hdul["SCI"].data = data_recentered
+        # hdul["ERR"].data = erro_recentered
+        # if is2d:
+        #     xsh = fits.Column(name="XSHIFT", format="D", array=np.array([dx]))  # pix
+        #     ysh = fits.Column(name="YSHIFT", format="D", array=np.array([dy]))  # pix
+        # else:
+        #     xsh = fits.Column(name="XSHIFT", format="D", array=np.array(dx))  # pix
+        #     ysh = fits.Column(name="YSHIFT", format="D", array=np.array(dy))  # pix
+        # hdu_ims = fits.BinTableHDU.from_columns([xsh, ysh])
+        # hdu_ims.header["EXTNAME"] = "IMSHIFT"
+        # hdul += [hdu_ims]
+        # hdul.writeto(path + suffix_out + ".fits", output_verify="fix", overwrite=True)
+        # hdul.close()
 
-        print("--> Recenter frames step done")
+        self.log.info("--> Recenter frames step done")
 
-        return suffix_out
+        return output_models

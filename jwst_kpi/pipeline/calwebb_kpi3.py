@@ -85,6 +85,7 @@ class Kpi3Pipeline(Pipeline):
             if not os.path.exists(self.output_dir):
                 os.makedirs(self.output_dir)
 
+        # TODO: Preserve "step" name for their process method somewhere?
         with datamodels.open(input_data) as input:
 
             # TODO: Handle suffix

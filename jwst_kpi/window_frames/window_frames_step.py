@@ -1,34 +1,38 @@
-import numpy as np
-import matplotlib.pyplot as plt
-from astropy.io import fits
+import os
+
 import matplotlib.patheffects as PathEffects
+import matplotlib.pyplot as plt
+import numpy as np
+# from astropy.io import fits
+from jwst import datamodels
+from jwst.stpipe import Step
 from xara import core
 
-from . import utils as ut
+# from . import utils as ut
 
 
-class window_frames:
+WRAD_DEFAULT = 24
+
+
+class WindowFramesStep(Step):
     """
     Window frames.
     """
 
-    def __init__(self):
-        """
-        Initialize the pipeline step.
-        """
+    class_alias = "window_frames"
 
-        # Initialize the step parameters.
-        self.skip = False
-        self.plot = True
-        self.wrad = 24  # pix
+    # TODO: wrad is int or float?
+    spec = f"""
+        plot = boolean(default=True)
+        previous_suffix = string(default=None)
+        wrad = int(default={WRAD_DEFAULT})
+        show_plots = boolean(default=False)
+        good_frames = int_list(default=None)
+    """
 
-    def step(
+    def process(
         self,
-        file,
-        suffix,
-        output_dir=None,
-        show_plots=False,
-        good_frames=None,
+        input_data,
     ):
         """
         Run the pipeline step.
@@ -48,15 +52,22 @@ class window_frames:
             List of good frames, bad frames will be skipped.
         """
 
-        print("--> Running window frames step...")
+        self.log.info("--> Running window frames step...")
+
+        good_frames = self.good_frames
 
         # Open file.
-        if suffix == "":
-            hdul = ut.open_fits(file, suffix=suffix, file_dir=None)
+        # TODO: Mention this in PR
+        if self.previous_suffix is None:
+            input_models = datamodels.open(input_data)
         else:
-            hdul = ut.open_fits(file, suffix=suffix, file_dir=output_dir)
-        data = hdul["SCI"].data
-        erro = hdul["ERR"].data
+            raise ValueError("Unexpected previous_suffix attribute")
+        # if suffix == "":
+        #     hdul = ut.open_fits(file, suffix=suffix, file_dir=None)
+        # else:
+        #     hdul = ut.open_fits(file, suffix=suffix, file_dir=output_dir)
+        data = input_models.data
+        erro = input_models.err
         if data.ndim not in [2, 3]:
             raise UserWarning("Only implemented for 2D image/3D data cube")
         if data.ndim == 2:
@@ -81,13 +92,14 @@ class window_frames:
                 )
 
         # Suffix for the file path from the current step.
-        suffix_out = "_windowed"
+        suffix_out = f"_{self.suffix or self.default_suffix()}"
 
         # Window.
         if self.wrad is None:
-            self.wrad = 24
+            self.log.warning(f"wrad was set to None. Using default value of {WRAD_DEFAULT}")
+            self.wrad = WRAD_DEFAULT
 
-        print(
+        self.log.info(
             "--> Windowing frames with super-Gaussian mask with radius %.0f pixels"
             % self.wrad
         )
@@ -105,7 +117,10 @@ class window_frames:
                     erro_windowed[i] *= sgmask
 
         # Get output file path.
-        path = ut.get_output_base(file, output_dir=output_dir)
+        # TODO: Test and cleanup
+        # path = ut.get_output_base(file, output_dir=output_dir)
+        mk_path = self.make_output_path()
+        path = os.path.splitext(mk_path)[0]
 
         # Plot.
         if self.plot:
@@ -180,35 +195,41 @@ class window_frames:
             plt.suptitle("Window frames step", size=18)
             plt.tight_layout()
             plt.savefig(path + suffix_out + ".pdf")
-            if show_plots:
+            if self.show_plots:
                 plt.show()
             plt.close()
 
         # Save file.
+        # TODO: Mark step completed
+        # TODO: How add keywords in pipeline?
+        # TODO: Might want to just save this direclty here instead of using default saving mech
         if is2d:
             data = data[0]
             erro = erro[0]
             data_windowed = data_windowed[0]
             erro_windowed = erro_windowed[0]
-        try:
-            hdul.index_of("SCI-ORG")
-        except Exception:
-            hdu_sci_org = fits.ImageHDU(data)
-            hdu_sci_org.header["EXTNAME"] = "SCI-ORG"
-            hdu_err_org = fits.ImageHDU(erro)
-            hdu_err_org.header["EXTNAME"] = "ERR-ORG"
-            hdul += [hdu_sci_org, hdu_err_org]
-        hdul["SCI"].data = data_windowed
-        hdul["SCI"].header["WRAD"] = self.wrad
-        hdul["ERR"].data = erro_windowed
-        hdul["ERR"].header["WRAD"] = self.wrad
-        hdu_win = fits.ImageHDU(sgmask)
-        hdu_win.header["EXTNAME"] = "WINMASK"
-        hdu_win.header["WRAD"] = self.wrad
-        hdul += [hdu_win]
-        hdul.writeto(path + suffix_out + ".fits", output_verify="fix", overwrite=True)
-        hdul.close()
+        output_models = input_models.copy()
+        output_models.data = data_windowed
+        output_models.err = erro_windowed
+        # try:
+        #     hdul.index_of("SCI-ORG")
+        # except Exception:
+        #     hdu_sci_org = fits.ImageHDU(data)
+        #     hdu_sci_org.header["EXTNAME"] = "SCI-ORG"
+        #     hdu_err_org = fits.ImageHDU(erro)
+        #     hdu_err_org.header["EXTNAME"] = "ERR-ORG"
+        #     hdul += [hdu_sci_org, hdu_err_org]
+        # hdul["SCI"].data = data_windowed
+        # hdul["SCI"].header["WRAD"] = self.wrad
+        # hdul["ERR"].data = erro_windowed
+        # hdul["ERR"].header["WRAD"] = self.wrad
+        # hdu_win = fits.ImageHDU(sgmask)
+        # hdu_win.header["EXTNAME"] = "WINMASK"
+        # hdu_win.header["WRAD"] = self.wrad
+        # hdul += [hdu_win]
+        # hdul.writeto(path + suffix_out + ".fits", output_verify="fix", overwrite=True)
+        # hdul.close()
 
-        print("--> Window frames step done")
+        self.log.info("--> Window frames step done")
 
-        return suffix_out
+        return output_models

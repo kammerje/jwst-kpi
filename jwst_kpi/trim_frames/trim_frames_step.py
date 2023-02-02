@@ -1,41 +1,44 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.patches import Rectangle
+import os
 from scipy.ndimage import median_filter
 import matplotlib.patheffects as PathEffects
 from jwst.stpipe import Step
+from jwst import datamodels
 
-from .. import utils as ut
+# from .. import utils as ut
 
 
 class TrimFramesStep(Step):
     """
     Trim frames.
+    suffix: str
+        Suffix for the file path to find the product from the previous
+        step.
+    output_dir: str
+        Output directory, if None uses same directory as input file.
+    show_plots: bool
+        Show plots?
+    good_frames: list of int
+        List of good frames, bad frames will be skipped.
     """
 
     class_alias = "trim_frames"
 
+    # NOTE: output_dir and suffix now handled automatically by parent Step class
     spec = """
+        plot = boolean(default=True)
+        previous_suffix = string(default=None)
+        trim_cent = int_list(min=2, max=2, default=None)
+        trim_halfsize = integer(default=32)
+        show_plots = boolean(default=False)
+        good_frames = int_list(default=None)
     """
 
-    def __init__(self):
-        """
-        Initialize the pipeline step.
-        """
-
-        # Initialize the step parameters.
-        self.skip = False
-        self.plot = True
-        self.trim_cent = None
-        self.trim_halfsize = 32  # pix
-
-    def step(
+    def process(
         self,
-        file,
-        suffix,
-        output_dir=None,
-        show_plots=False,
-        good_frames=None,
+        input_data,
     ):
         """
         Run the pipeline step.
@@ -44,29 +47,27 @@ class TrimFramesStep(Step):
         ----------
         file: str
             Path to stage 2-calibrated pipeline product.
-        suffix: str
-            Suffix for the file path to find the product from the previous
-            step.
-        output_dir: str
-            Output directory, if None uses same directory as input file.
-        show_plots: bool
-            Show plots?
-        good_frames: list of int
-            List of good frames, bad frames will be skipped.
         """
 
-        print("--> Running trim frames step...")
+        self.log.info("--> Running trim frames step...")
 
-        # Open file.
-        if suffix == "":
-            hdul = ut.open_fits(file, suffix=suffix, file_dir=None)
+        good_frames = self.good_frames
+
+        # Open file. Use default pipeline way unless "previous suffix is used"
+        # TODO: Mention this in PR
+        if self.previous_suffix is None:
+            input_models = datamodels.open(input_data)
         else:
-            hdul = ut.open_fits(file, suffix=suffix, file_dir=output_dir)
-        data = hdul["SCI"].data
-        erro = hdul["ERR"].data
-        pxdq = hdul["DQ"].data
+            raise ValueError("Unexpected previous_suffix attribute")
+        # elif self.previous_suffix == "":
+        #     hdul = ut.open_fits(input_data, suffix=self.previous_suffix, file_dir=None)
+        # else:
+        #     hdul = ut.open_fits(input_data, suffix=self.previous_suffix, file_dir=self.output_dir)
+        data = input_models.data
+        erro = input_models.err
+        pxdq = input_models.dq
         if data.ndim not in [2, 3]:
-            raise UserWarning("Only implemented for 2D image/3D data cube")
+            raise ValueError("Only implemented for 2D image/3D data cube")
         if data.ndim == 2:
             is2d = True
             data = data[np.newaxis]
@@ -76,7 +77,6 @@ class TrimFramesStep(Step):
             is2d = False
         nf, sy, sx = data.shape
         if good_frames is not None:
-            # NOTE: This will raise error if good_frames is int. Supporting only list seems fine
             if len(good_frames) < 1:
                 raise UserWarning(
                     "List of good frames needs to contain at least one element"
@@ -91,7 +91,7 @@ class TrimFramesStep(Step):
                 )
 
         # Suffix for the file path from the current step.
-        suffix_out = "_trimmed"
+        suffix_out = f"_{self.suffix or self.default_suffix()}"
 
         # Trim frames. Need to trim all frames (also bad ones) to match their
         # shapes.
@@ -134,7 +134,7 @@ class TrimFramesStep(Step):
         sh_max = min(xh_max, yh_max)
         self.trim_halfsize = min(sh_max, self.trim_halfsize)
 
-        print(
+        self.log.info(
             "--> Trimming frames around (x, y) = (%.0f, %.0f) to a size of %.0fx%.0f pixels"
             % (ww_max[1], ww_max[0], 2 * self.trim_halfsize, 2 * self.trim_halfsize)
         )
@@ -156,10 +156,13 @@ class TrimFramesStep(Step):
                 ww_max[1] - self.trim_halfsize : ww_max[1] + self.trim_halfsize,
             ].copy()
 
-        # Get output file path.
-        path = ut.get_output_base(file, output_dir=output_dir)
+        # TODO: Test and cleanup
+        # path = ut.get_output_base(file, output_dir=self.output_dir)
+        mk_path = self.make_output_path()
+        path = os.path.splitext(mk_path)[0]
 
         # Plot.
+        # TODO: Handle plot path
         if self.plot:
             plt.ioff()
             f, ax = plt.subplots(2, 2, figsize=(1.50 * 6.4, 1.50 * 4.8))
@@ -290,27 +293,35 @@ class TrimFramesStep(Step):
             plt.suptitle("Trim frames step", size=18)
             plt.tight_layout()
             plt.savefig(path + suffix_out + ".pdf")
-            if show_plots:
+            if self.show_plots:
                 plt.show()
             plt.close()
 
         # Save file.
+        # TODO: Mark step completed
+        # TODO: How add keywords in pipeline?
+        # TODO: Might want to just save this direclty here instead of using default saving mech
+        # One option would be to save, them read + update... Not optimal
         if is2d:
             data_trimmed = data_trimmed[0]
             erro_trimmed = erro_trimmed[0]
             pxdq_trimmed = pxdq_trimmed[0]
-        hdul["SCI"].data = data_trimmed
-        hdul["SCI"].header["CENT_X"] = ww_max[1]
-        hdul["SCI"].header["CENT_Y"] = ww_max[0]
-        hdul["ERR"].data = erro_trimmed
-        hdul["ERR"].header["CENT_X"] = ww_max[1]
-        hdul["ERR"].header["CENT_Y"] = ww_max[0]
-        hdul["DQ"].data = pxdq_trimmed
-        hdul["DQ"].header["CENT_X"] = ww_max[1]
-        hdul["DQ"].header["CENT_Y"] = ww_max[0]
-        hdul.writeto(path + suffix_out + ".fits", output_verify="fix", overwrite=True)
-        hdul.close()
+        output_models = input_models.copy()
+        output_models.data = data_trimmed
+        output_models.err = erro_trimmed
+        output_models.dq = pxdq_trimmed
+        # hdul["SCI"].data = data_trimmed
+        # hdul["SCI"].header["CENT_X"] = ww_max[1]
+        # hdul["SCI"].header["CENT_Y"] = ww_max[0]
+        # hdul["ERR"].data = erro_trimmed
+        # hdul["ERR"].header["CENT_X"] = ww_max[1]
+        # hdul["ERR"].header["CENT_Y"] = ww_max[0]
+        # hdul["DQ"].data = pxdq_trimmed
+        # hdul["DQ"].header["CENT_X"] = ww_max[1]
+        # hdul["DQ"].header["CENT_Y"] = ww_max[0]
+        # hdul.writeto(path + suffix_out + ".fits", output_verify="fix", overwrite=True)
+        # hdul.close()
 
-        print("--> Trim frames step done")
+        self.log.info("--> Trim frames step done")
 
-        return suffix_out
+        return output_models
