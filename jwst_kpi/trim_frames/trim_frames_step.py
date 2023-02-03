@@ -6,6 +6,7 @@ from jwst.stpipe import Step
 from jwst import datamodels
 
 # from .. import utils as ut
+from ..datamodels import TrimmedCubeModel
 from .trim_frames_plots import plot_trim
 
 
@@ -178,21 +179,15 @@ class TrimFramesStep(Step):
             data_trimmed = data_trimmed[0]
             erro_trimmed = erro_trimmed[0]
             pxdq_trimmed = pxdq_trimmed[0]
-        output_models = input_models.copy()
+        # TODO: Output model should be a trimmed cube
+        output_models = TrimmedCubeModel()
+        output_models.update(input_models)
+        # output_models = input_models.copy()
         output_models.data = data_trimmed
         output_models.err = erro_trimmed
         output_models.dq = pxdq_trimmed
-        # hdul["SCI"].data = data_trimmed
-        # hdul["SCI"].header["CENT_X"] = ww_max[1]
-        # hdul["SCI"].header["CENT_Y"] = ww_max[0]
-        # hdul["ERR"].data = erro_trimmed
-        # hdul["ERR"].header["CENT_X"] = ww_max[1]
-        # hdul["ERR"].header["CENT_Y"] = ww_max[0]
-        # hdul["DQ"].data = pxdq_trimmed
-        # hdul["DQ"].header["CENT_X"] = ww_max[1]
-        # hdul["DQ"].header["CENT_Y"] = ww_max[0]
-        # hdul.writeto(path + suffix_out + ".fits", output_verify="fix", overwrite=True)
-        # hdul.close()
+        output_models.meta.cent_x = ww_max[1]
+        output_models.meta.cent_y = ww_max[0]
 
         self.log.info("--> Trim frames step done")
 
