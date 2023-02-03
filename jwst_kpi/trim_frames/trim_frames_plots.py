@@ -5,6 +5,7 @@ import matplotlib.patheffects as PathEffects
 
 
 def plot_trim(data, data_trimmed, pxdq, pxdq_trimmed, ww_max, trim_halfsize, good_frames=None):
+    plt.ioff()
     f, ax = plt.subplots(2, 2, figsize=(1.50 * 6.4, 1.50 * 4.8))
     if good_frames is None:
         p00 = ax[0, 0].imshow(np.log10(np.abs(data[0])), origin="lower")

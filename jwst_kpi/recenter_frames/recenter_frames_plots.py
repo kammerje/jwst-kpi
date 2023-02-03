@@ -3,6 +3,7 @@ import matplotlib.patheffects as PathEffects
 
 
 def plot_recenter(data, data_recentered, dx, dy, good_frames=None):
+    plt.ioff()
     _, sy, sx = data.shape
     f, ax = plt.subplots(1, 2, figsize=(1.50 * 6.4, 0.75 * 4.8))
     if good_frames is None:

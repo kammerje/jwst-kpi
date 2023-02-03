@@ -4,11 +4,9 @@ import numpy as np
 
 
 def plot_emp_uncertainties(emcor, emcor_sample, kpdat, wmdat, wmsig=None, emsig=None):
-
-    nkp = kpdat.shape[2]
-
-    colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
     plt.ioff()
+    nkp = kpdat.shape[2]
+    colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
     gs = gridspec.GridSpec(2, 2)
     f = plt.figure(figsize=(2.00 * 6.4, 2.00 * 4.8))
     ax = plt.subplot(gs[0, 0])

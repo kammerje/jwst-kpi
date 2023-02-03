@@ -3,9 +3,9 @@ import matplotlib.pyplot as plt
 
 
 def plot_kerphase(data, KPO, m2pix, kpcor, kpsig, good_frames=None):
+    plt.ioff()
     _, sy, sx = data.shape
     colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
-    plt.ioff()
     f, ax = plt.subplots(2, 2, figsize=(1.50 * 6.4, 1.50 * 4.8))
     if good_frames is None:
         d00 = np.fft.fftshift(np.fft.fft2(np.fft.fftshift(data[0])))

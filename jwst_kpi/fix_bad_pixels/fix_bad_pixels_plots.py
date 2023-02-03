@@ -4,6 +4,7 @@ import numpy as np
 
 
 def plot_badpix(data, data_bpfixed, bad_bits, mask, good_frames, method="medfilt"):
+    plt.ioff()
     f, ax = plt.subplots(1, 3, figsize=(2.25 * 6.4, 0.75 * 4.8))
     if good_frames is None:
         p0 = ax[0].imshow(mask[0], origin="lower")

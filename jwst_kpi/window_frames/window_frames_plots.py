@@ -4,6 +4,7 @@ import numpy as np
 
 
 def plot_window(data_windowed, wrad, good_frames=None):
+    plt.ioff()
     _, sy, sx = data_windowed.shape
     f, ax = plt.subplots(1, 2, figsize=(1.50 * 6.4, 0.75 * 4.8))
     if good_frames is None:
