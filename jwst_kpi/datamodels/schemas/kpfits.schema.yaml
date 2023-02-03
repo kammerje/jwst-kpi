@@ -1,0 +1,166 @@
+%YAML 1.1
+---
+$schema: "http://stsci.edu/schemas/fits-schema/fits-schema"
+id: "http://stsci.edu/schemas/jwst_kpi_datamodel/kpfits.schema"
+allOf:
+# NOTE: Not sure need to include all of this (except for cube, but not taking chances)
+- $ref: http://stsci.edu/schemas/jwst_datamodel/cube.schema
+- $ref: http://stsci.edu/schemas/jwst_datamodel/bunit.schema
+- $ref: http://stsci.edu/schemas/jwst_datamodel/photometry.schema
+- $ref: http://stsci.edu/schemas/jwst_datamodel/wcsinfo.schema
+- type: object
+  properties:
+    # TODO: if removed dims for all except data in other defs, could kpfits inherit from them?
+    data:
+      title: The science data
+      fits_hdu: SCI
+      default: 0.0
+      ndim: 4
+      datatype: float32
+    dq:
+      title: Data quality array
+      fits_hdu: DQ
+      default: 0
+      datatype: uint32
+    err:
+      title: Error array
+      fits_hdu: ERR
+      default: 0.0
+      datatype: float32
+    aperture:
+      title: Aperture grid points and transmission
+      fits_hdu: APERTURE
+      datatype:
+        - name: XXC
+          datatype: float64
+        - name: YYC
+          datatype: float64
+        - name: TRM
+          datatype: float64
+    uv_plane:
+      title: UV plane coordinates (m)
+      fits_hdu: UV-PLANE
+      datatype:
+        - name: UUC
+          datatype: float64
+        - name: VVC
+          datatype: float64
+        - name: RED
+          datatype: float64
+    ker_mat:
+      title: KPM matrix from Fourier to Kernel phase
+      fits_hdu: KER-MAT
+      default: 0.0
+      ndim: 2
+      datatype: float32
+    blm_mat:
+      title: Matrix mapping pupil phase to fourier phase
+      fits_hdu: BLM-MAT
+      default: 0.0
+      ndim: 2
+      datatype: float32
+    kp_data:
+      title: Kernel phase data (rad)
+      fits_hdu: KP-DATA
+      default: 0.0
+      ndim: 3
+      datatype: float32
+    kp_sigm:
+      title: Kernel phase uncertainties (rad)
+      fits_hdu: KP-SIGM
+      default: 0.0
+      ndim: 3
+      datatype: float32
+    kp_cov:
+      title: Kernel phase covariance (rad^2)
+      fits_hdu: KP-COV
+      default: 0.0
+      ndim: 3
+      datatype: float32
+    cwavel:
+      title: Bandpass characteristics (central and bandwidth)
+      fits_hdu: CWAVEL
+      datatype:
+        - name: CWAVEL
+          datatype: float64
+        - name: BWIDTH
+          datatype: float64
+    detpa:
+      title: Detector position angle (deg E of N)
+      fits_hdu: DETPA
+      default: 0.0
+      ndim: 1
+      datatype: float32
+    cvis_data:
+      title: Complex visibility data (real, img)
+      fits_hdu: CVIS-DATA
+      default: 0.0
+      ndim: 4
+      datatype: float32
+    data_org:
+      title: Original science cube
+      fits_hdu: SCI-ORG
+      default: 0.0
+      ndim: 4
+      datatype: float32
+    err_org:
+      title: Original error cube
+      fits_hdu: ERR-ORG
+      default: 0.0
+      datatype: float32
+    dq_mod:
+      title: DQ Mask from bp fix
+      fits_hdu: DQ-MOD
+      default: 0
+      ndim: 4
+      datatype: uint32
+    sgmask:
+      title: Super-Gaussian mask used for windowing
+      fits_hdu: WINMASK
+      default: 0.0
+      ndim: 2
+      datatype: float32
+    meta:
+      type: object
+      properties:
+        wrad:
+          title: Windowing radius
+          type: number
+          fits_keyword: WRAD
+          # NOTE: Putting in primary for now instead of repeating in all extensions
+          # (originally in SCI and ERR)
+          # fits_hdu: PRIMARY
+        pscale:
+          title: Pixel scale (mas)
+          type: float64
+          fits_keyword: PSCALE
+        gain:
+          title: Gain (e-/ADU)
+          type: float64
+          fits_keyword: GAIN
+        diam:
+          title: Telescope diameter (m, flat-to-flat)
+          type: float64
+          fits_keyword: DIAM
+        exptime:
+          title: Exposure time (s, copied from EFFINTTM)
+          type: float64
+          fits_keyword: EXPTIME
+        dateobs:
+          title: Observation date (DATE-OBS + TIME-OBS)
+          type: string
+          fits_keyword: DATEOBS
+        procsoft:
+          title: Processing software used
+          type: string
+          fits_keyword: PROCSOFT
+        calflag:
+          title: Calibrated data
+          type: boolean
+          fits_keyword: CALFLAG
+        content:
+          title: "Content of file"
+          type: string
+          figs_keyword: CONTENT
+- $ref: http://stsci.edu/schemas/jwst_datamodel/int_times.schema
+- $ref: http://stsci.edu/schemas/jwst_datamodel/variance.schema

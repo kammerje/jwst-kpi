@@ -1,0 +1,34 @@
+%YAML 1.1
+---
+$schema: "http://stsci.edu/schemas/fits-schema/fits-schema"
+id: "http://stsci.edu/schemas/jwst_kpi_datamodel/recentercube.schema"
+allOf:
+# NOTE: Not sure need to include all of this (except for cube, but not taking chances)
+- $ref: cube.schema
+- $ref: bunit.schema
+- $ref: photometry.schema
+- $ref: wcsinfo.schema
+- type: object
+  properties:
+    data_org:
+      title: Original science cube (pre-recentering)
+      fits_hdu: SCI-ORG
+      default: 0.0
+      ndim: 3
+      datatype: float32
+    err_org:
+      title: Original error cube (pre-recentering)
+      fits_hdu: ERR-ORG
+      default: 0.0
+      ndim: 3
+      datatype: float32
+    imshift:
+      title: Table of shifts used to recenter image
+      fits_hdu: IMSHIFT
+      datatype:
+        - name: XSHIFT
+          datatype: float64
+        - name: YSHIFT
+          datatype: float64
+- $ref: int_times.schema
+- $ref: variance.schema

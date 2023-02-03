@@ -1,0 +1,42 @@
+%YAML 1.1
+---
+$schema: "http://stsci.edu/schemas/fits-schema/fits-schema"
+id: "http://stsci.edu/schemas/jwst_kpi_datamodel/windowcube.schema"
+allOf:
+# NOTE: Not sure need to include all of this (except for cube, but not taking chances)
+- $ref: cube.schema
+- $ref: bunit.schema
+- $ref: photometry.schema
+- $ref: wcsinfo.schema
+- type: object
+  properties:
+    data_org:
+      title: Original science cube (pre-windowing)
+      fits_hdu: SCI-ORG
+      default: 0.0
+      ndim: 3
+      datatype: float32
+    err_org:
+      title: Original error cube (pre-windowing)
+      fits_hdu: ERR-ORG
+      default: 0.0
+      ndim: 3
+      datatype: float32
+    sgmask:
+      title: Super-Gaussian mask used for windowing
+      fits_hdu: WINMASK
+      default: 0.0
+      ndim: 2
+      datatype: float32
+    meta:
+      type: object
+      properties:
+        wrad:
+          title: Windowing radius
+          type: number
+          fits_keyword: WRAD
+          # NOTE: Putting in primary for now instead of repeating in all extensions
+          # (originally in SCI and ERR)
+          # fits_hdu: PRIMARY
+- $ref: int_times.schema
+- $ref: variance.schema
