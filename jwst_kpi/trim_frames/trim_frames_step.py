@@ -136,6 +136,7 @@ class TrimFramesStep(Step):
             % (ww_max[1], ww_max[0], 2 * self.trim_halfsize, 2 * self.trim_halfsize)
         )
 
+        # TODO: Unused loop?? (repeating vectorized code)
         for i in range(nf):
             data_trimmed = data[
                 :,
