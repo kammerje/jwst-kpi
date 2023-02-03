@@ -2,7 +2,6 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
-# from astropy.io import fits
 from jwst import datamodels
 from jwst.stpipe import Step
 from xara import core, kpo
@@ -271,24 +270,15 @@ class RecenterFramesStep(Step):
         output_models = input_models.copy()
         output_models.data = data_recentered
         output_models.err = erro_recentered
-        # hdu_sci_org = fits.ImageHDU(data)
-        # hdu_sci_org.header["EXTNAME"] = "SCI-ORG"
-        # hdu_err_org = fits.ImageHDU(erro)
-        # hdu_err_org.header["EXTNAME"] = "ERR-ORG"
-        # hdul += [hdu_sci_org, hdu_err_org]
-        # hdul["SCI"].data = data_recentered
-        # hdul["ERR"].data = erro_recentered
-        # if is2d:
-        #     xsh = fits.Column(name="XSHIFT", format="D", array=np.array([dx]))  # pix
-        #     ysh = fits.Column(name="YSHIFT", format="D", array=np.array([dy]))  # pix
-        # else:
-        #     xsh = fits.Column(name="XSHIFT", format="D", array=np.array(dx))  # pix
-        #     ysh = fits.Column(name="YSHIFT", format="D", array=np.array(dy))  # pix
-        # hdu_ims = fits.BinTableHDU.from_columns([xsh, ysh])
-        # hdu_ims.header["EXTNAME"] = "IMSHIFT"
-        # hdul += [hdu_ims]
-        # hdul.writeto(path + suffix_out + ".fits", output_verify="fix", overwrite=True)
-        # hdul.close()
+        output_models.data_org = data
+        output_models.err_org = erro
+        # TODO: This might not work, maybe need to create full imshift rec array
+        if is2d:
+            output_models.imshift["XSHIFT"] = np.array([dx])  # pix
+            output_models.imshift["YSHIFT"] = np.array([dy])  # pix
+        else:
+            output_models.imshift["XSHIFT"] = np.array(dx)  # pix
+            output_models.imshift["YSHIFT"] = np.array(dy)  # pix
 
         self.log.info("--> Recenter frames step done")
 
