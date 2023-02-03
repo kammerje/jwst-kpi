@@ -48,20 +48,13 @@ class EmpiricalUncertainties(Step):
         self.log.info("--> Running empirical uncertainties step...")
 
         # Open file.
-        # TODO: Mention this in PR
         if self.previous_suffix is None:
             input_models = datamodels.open(input_data)
         else:
             raise ValueError("Unexpected previous_suffix attribute")
-        # if suffix == "":
-        #     hdul = ut.open_fits(file, suffix=suffix, file_dir=None)
-        # else:
-        #     hdul = ut.open_fits(file, suffix=suffix, file_dir=output_dir)
-        # TODO: Load kp data (fix HDUL loading)
-        hdul = None
-        kpdat = hdul["KP-DATA"].data
-        kpsig = hdul["KP-SIGM"].data
-        kpcov = hdul["KP-COV"].data
+        kpdat = input_models.kp_data
+        kpsig = input_models.kp_sigm
+        kpcov = input_models.kp_cov
         if kpdat.ndim != 3 or kpsig.ndim != 3 or kpcov.ndim != 4:
             raise UserWarning("Input file is not a valid KPFITS file")
         if kpdat.shape[0] < 3:
@@ -137,20 +130,18 @@ class EmpiricalUncertainties(Step):
         # Save file.
         # TODO: Handle saving in KPfits file
         output_models = input_models.copy()
-        hdul["KP-DATA"].data = wmdat
+        output_models.kp_data = wmdat
         if self.get_emp_err:
             if self.get_emp_cor:
-                hdul["KP-SIGM"].data = emsig_sample
-                hdul["KP-COV"].data = emcov_sample
+                output_models.kp_sigm = emsig_sample
+                output_models.kp_cov = emcov_sample
             else:
-                hdul["KP-SIGM"].data = emsig
-                hdul["KP-COV"].data = emcov
+                output_models.kp_sigm = emsig
+                output_models.kp_cov = emcov
         else:
-            hdul["KP-SIGM"].data = wmsig
-            hdul["KP-COV"].data = wmcov
-        hdul["DETPA"].data = np.array([np.mean(hdul["DETPA"].data)])
-        hdul.writeto(path + suffix_out + ".fits", output_verify="fix", overwrite=True)
-        hdul.close()
+            output_models.kp_sigm = wmsig
+            output_models.kp_cov = wmcov
+        output_models.detpa = np.array([np.mean(input_models.detpa)])
 
         self.log.info("--> Empirical uncertainties step done")
 
