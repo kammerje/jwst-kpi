@@ -132,9 +132,6 @@ class ExtractKerphaseStep(Step):
             raise UserWarning("Unsupported instrument")
         FILTER = input_models.meta.instrument.filter
 
-        # Suffix for the file path from the current step.
-        suffix_out = f"_{self.suffix or self.default_suffix()}"
-
         # Get detector pixel scale and position angle.
         # TODO: Dup code with recentering step
         if INSTRUME == "NIRCAM":
@@ -338,12 +335,12 @@ class ExtractKerphaseStep(Step):
         # Get output file path.
         # path = ut.get_output_base(file, output_dir=output_dir)
         mk_path = self.make_output_path()
-        path = os.path.splitext(mk_path)[0]
+        stem = os.path.splitext(mk_path)[0]
 
         # Plot.
         if self.plot:
             plot_kerphase(data, KPO, m2pix, kpcor, kpsig, good_frames=good_frames)
-            plt.savefig(path + suffix_out + ".pdf")
+            plt.savefig(stem + ".pdf")
             if self.show_plots:
                 plt.show()
             plt.close()

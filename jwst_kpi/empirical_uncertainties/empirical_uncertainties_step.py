@@ -63,9 +63,6 @@ class EmpiricalUncertainties(Step):
             )
             return input_models
 
-        # Suffix for the file path from the current step.
-        suffix_out = f"_{self.suffix or self.default_suffix()}"
-
         #
         nf = kpdat.shape[0]
 
@@ -106,10 +103,8 @@ class EmpiricalUncertainties(Step):
                 emsig_sample[0, i][:, None] * emsig_sample[0, i][None, :],
             )
 
-        # TODO: Test and cleanup
-        # path = ut.get_output_base(file, output_dir=self.output_dir)
         mk_path = self.make_output_path()
-        path = os.path.splitext(mk_path)[0]
+        stem = os.path.splitext(mk_path)[0]
 
         # Plot.
         if self.plot:
@@ -122,7 +117,7 @@ class EmpiricalUncertainties(Step):
                 wmsig=wmsig,
                 emsig=emsig_plot_arg,
             )
-            plt.savefig(path + suffix_out + ".pdf")
+            plt.savefig(stem + ".pdf")
             if self.show_plots:
                 plt.show()
             plt.close()

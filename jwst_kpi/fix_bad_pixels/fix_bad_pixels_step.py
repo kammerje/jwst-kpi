@@ -126,9 +126,6 @@ class FixBadPixelsStep(Step):
                     "Some of the provided good frames are outside the data range"
                 )
 
-        # Suffix for the file path from the current step.
-        suffix_out = f"_{self.suffix or self.default_suffix()}"
-
         # Make bad pixel map.
         mask = pxdq < 0
         for i in range(len(self.bad_bits)):
@@ -177,12 +174,12 @@ class FixBadPixelsStep(Step):
         # Get output file path.
         # path = ut.get_output_base(file, output_dir=output_dir)
         mk_path = self.make_output_path()
-        path = os.path.splitext(mk_path)[0]
+        stem = os.path.splitext(mk_path)[0]
 
         # Plot.
         if self.plot:
             plot_badpix(data, data_bpfixed, bb, mask, good_frames, method=self.method)
-            plt.savefig(path + suffix_out + ".pdf")
+            plt.savefig(stem + ".pdf")
             if self.show_plots:
                 plt.show()
             plt.close()

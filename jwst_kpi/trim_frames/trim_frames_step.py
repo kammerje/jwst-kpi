@@ -90,9 +90,6 @@ class TrimFramesStep(Step):
                     "Some of the provided good frames are outside the data range"
                 )
 
-        # Suffix for the file path from the current step.
-        suffix_out = f"_{self.suffix or self.default_suffix()}"
-
         # Trim frames. Need to trim all frames (also bad ones) to match their
         # shapes.
         if self.trim_cent is None:
@@ -156,16 +153,14 @@ class TrimFramesStep(Step):
                 ww_max[1] - self.trim_halfsize : ww_max[1] + self.trim_halfsize,
             ].copy()
 
-        # TODO: Test and cleanup
-        # path = ut.get_output_base(file, output_dir=self.output_dir)
+        # TODO: This is duplicated in all methods
         mk_path = self.make_output_path()
-        path = os.path.splitext(mk_path)[0]
+        stem = os.path.splitext(mk_path)[0]
 
         # Plot.
-        # TODO: Handle plot path
         if self.plot:
             plot_trim(data, data_trimmed, pxdq, pxdq_trimmed, ww_max, self.trim_halfsize, good_frames=good_frames)
-            plt.savefig(path + suffix_out + ".pdf")
+            plt.savefig(stem + ".pdf")
             if self.show_plots:
                 plt.show()
             plt.close()
