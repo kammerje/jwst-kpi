@@ -199,16 +199,9 @@ class FixBadPixelsStep(Step):
             mask = mask[0]
         output_models.data = data_bpfixed
         output_models.err = erro_bpfixed
-        # hdul["SCI"].data = data_bpfixed
-        # hdul["SCI"].header["FIX_METH"] = self.method
-        # hdul["ERR"].data = erro_bpfixed
-        # hdul["ERR"].header["FIX_METH"] = self.method
-        # hdu_dq_mod = fits.ImageHDU(mask.astype("uint32"))
-        # hdu_dq_mod.header["EXTNAME"] = "DQ-MOD"
-        # hdu_dq_mod.header["BAD_BITS"] = bb
-        # hdul += [hdu_dq_mod]
-        # hdul.writeto(path + suffix_out + ".fits", output_verify="fix", overwrite=True)
-        # hdul.close()
+        output_models.meta.fix_meth = self.method
+        output_models.dq_mod = mask.astype("uint32")
+        output_models.bad_bits = bb
 
         self.log.info("--> Fix bad pixels step done")
 
