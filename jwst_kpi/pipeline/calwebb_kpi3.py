@@ -62,7 +62,6 @@ class Kpi3Pipeline(Pipeline):
         "empirical_uncertainties": empirical_uncertainties_step.empirical_uncertainties,
     }
 
-    # TODO: Adapt for pipeline
     # NOTE: `run` will now call this directly because subclass Pipeline
     def process(
         self,
@@ -88,10 +87,6 @@ class Kpi3Pipeline(Pipeline):
         # TODO: Preserve "step" name for their process method somewhere?
         with datamodels.open(input_data) as input:
 
-            # TODO: Handle suffix
-            # TODO: Handle output dirs
-            # TODO: Handle showing plots
-            # TODO: Handle good_frames
             # NOTE: Skipped steps are skipped in their own run/process
             # TODO: Handle recenter_frames/window_frames passed to extract_kerphase in old version
             # ("internally in complex visibility space")
