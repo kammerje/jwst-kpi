@@ -7,10 +7,11 @@ from jwst import datamodels
 from jwst.stpipe import Step
 from xara import core, kpo
 
-
+from ..constants import (gain, pscale, wave_miri, wave_nircam, wave_niriss,
+                         weff_miri, weff_nircam, weff_niriss)
 from . import pupil_data
-from ..constants import pscale, wave_nircam, wave_niriss, wave_miri, weff_nircam, weff_niriss, weff_miri
 from .extract_kerphase_plots import plot_kerphase
+
 # from . import utils as ut
 
 PUPIL_DIR = pupil_data.__path__[0]
@@ -142,7 +143,7 @@ class ExtractKerphaseStep(Step):
         else:
             PSCALE = pscale[INSTRUME]  # mas
         V3I_YANG = (
-            - input_models.meta.wcsinfo.v3yangle * data.meta.wcsinfo.vparity
+            -input_models.meta.wcsinfo.v3yangle * data.meta.wcsinfo.vparity
         )  # deg, counter-clockwise
 
         # Check if the filter is known.
@@ -381,93 +382,74 @@ class ExtractKerphaseStep(Step):
         data_org_good = np.array(data_org_good)
         erro_org_good = np.array(erro_org_good)
         pxdq_mod_good = np.array(pxdq_mod_good)
+        # TODO: Kpfits model for output and udpate with input
         output_models = input_models.copy()
         output_models.data = data_good[:, np.newaxis, :, :]
         output_models.err = erro_good[:, np.newaxis, :, :]
         output_models.dq = pxdq_good[:, np.newaxis, :, :]
-        # hdul[0].data = data_good[:, np.newaxis, :, :]
-        # hdul["SCI"].data = data_good[:, np.newaxis, :, :]
-        # hdul["ERR"].data = erro_good[:, np.newaxis, :, :]
-        # hdul["DQ"].data = pxdq_good[:, np.newaxis, :, :]
         # TODO: Update ORG and MOD
-        # try:
-        #     hdul["SCI-ORG"].data = data_org_good[:, np.newaxis, :, :]
-        #     hdul["ERR-ORG"].data = erro_org_good[:, np.newaxis, :, :]
-        # except Exception:
-        #     pass
-        # try:
-        #     hdul["DQ-MOD"].data = pxdq_mod_good[:, np.newaxis, :, :]
-        # except Exception:
-        #     pass
-        # TODO: Add these params
-        # hdul[0].header["PSCALE"] = PSCALE  # mas
-        # if INSTRUME == "NIRCAM":
-        #     hdul[0].header["GAIN"] = gain[INSTRUME + "_" + CHANNEL]  # e-/ADU
-        # else:
-        #     hdul[0].header["GAIN"] = gain[INSTRUME]  # e-/ADU
-        # hdul[0].header["DIAM"] = 6.559348  # m (flat-to-flat)
-        # hdul[0].header["EXPTIME"] = hdul[0].header["EFFINTTM"]  # s
-        # hdul[0].header["DATEOBS"] = (
-        #     hdul[0].header["DATE-OBS"] + "T" + hdul[0].header["TIME-OBS"]
-        # )  # YYYY-MM-DDTHH:MM:SS.MMM
-        # hdul[0].header["PROCSOFT"] = "CALWEBB_KPI3"
-        # try:
-        #     hdul[0].header["WRAD"] = hdul["WINMASK"].header["WRAD"]  # pix
-        # except Exception:
-        #     hdul[0].header["WRAD"] = "NONE"
-        # hdul[0].header["CALFLAG"] = "False"
-        # hdul[0].header["CONTENT"] = "KPFITS1"
-        # xy1 = fits.Column(name="XXC", format="D", array=KPO.kpi.VAC[:, 0])  # m
-        # xy2 = fits.Column(name="YYC", format="D", array=KPO.kpi.VAC[:, 1])  # m
-        # trm = fits.Column(name="TRM", format="D", array=KPO.kpi.TRM)
-        # hdu_ape = fits.BinTableHDU.from_columns([xy1, xy2, trm])
-        # hdu_ape.header["EXTNAME"] = "APERTURE"
+        # TODO: Simpler handling of repeated try/except's?
+        try:
+            output_models.data_org = data_org_good[:, np.newaxis, :, :]
+            output_models.err_org = err_org_good[:, np.newaxis, :, :]
+        except AttributeError:
+            pass
+        try:
+            output_models.dq_mod = pxdq_mod_good[:, np.newaxis, :, :]
+        except Exception:
+            pass
+        output_models.meta.pscale = PSCALE
+        # TODO: Handle gain_kwd earlier and then use this to get without if/else
+        if INSTRUME == "NIRCAM":
+            output_models.meta.gain = gain[INSTRUME + "_" + CHANNEL]  # e-/ADU
+        else:
+            output_models.meta.gain = gain[INSTRUME]  # e-/ADU
+        # TODO: Store in constants instead of hardcoding
+        output_models.meta.diam = 6.559348  # m (flat-to-flat)
+        output_models.meta.exptime = input_models.meta.exposure.integration_time
+        output_models.meta.dateobs = (
+            input_models.meta.observation.date
+            + "T"
+            + input_models.meta.observation.time
+        )  # YYYY-MM-DDTHH:MM:SS.MMM
+        output_models.meta.procsoft = "CALWEBB_KPI3"
+        try:
+            output_models.meta.wrad = input_models.meta.wrad  # pix
+        except AttributeError:
+            # TODO: type check will prob raise error
+            output_models.meta.wrad = "NONE"
+        output_models.meta.calflag = False
+        output_models.meta.content = "KPFITS1"
+        # Aperture coordinates
+        # TODO: Can transfer ttypes with datamodels/schemas?
+        output_models.aperture["XXC"] = KPO.kpi.VAC[:, 0]  # m
+        output_models.aperture["YYC"] = KPO.kpi.VAC[:, 1]  # m
+        output_models.aperture["TRM"] = KPO.kpi.TRM  # (0 <= 1 <= 1)
         # hdu_ape.header["TTYPE1"] = ("XXC", "Virtual aperture x-coord (meter)")
         # hdu_ape.header["TTYPE2"] = ("YYC", "Virtual aperture y-coord (meter)")
         # hdu_ape.header["TTYPE3"] = ("TRM", "Virtual aperture transmission (0 < t <= 1)")
-        # hdul += [hdu_ape]
-        # uv1 = fits.Column(name="UUC", format="D", array=KPO.kpi.UVC[:, 0])  # m
-        # uv2 = fits.Column(name="VVC", format="D", array=KPO.kpi.UVC[:, 1])  # m
-        # red = fits.Column(name="RED", format="I", array=KPO.kpi.RED)
-        # hdu_uvp = fits.BinTableHDU.from_columns([uv1, uv2, red])
-        # hdu_uvp.header["EXTNAME"] = "UV-PLANE"
+        # UV plane
+        output_models.aperture["UUC"] = KPO.kpi.UVC[:, 0]  # m
+        output_models.aperture["VVC"] = KPO.kpi.UVC[:, 1]  # m
+        output_models.aperture["TRM"] = KPO.kpi.RED  # int
         # hdu_uvp.header["TTYPE1"] = ("UUC", "Baseline u-coord (meter)")
         # hdu_uvp.header["TTYPE2"] = ("VVC", "Baseline v-coord (meter)")
         # hdu_uvp.header["TTYPE3"] = ("RED", "Baseline redundancy (int)")
-        # hdul += [hdu_uvp]
-        # hdu_kpm = fits.ImageHDU(KPO.kpi.KPM)
-        # hdu_kpm.header["EXTNAME"] = "KER-MAT"
-        # hdul += [hdu_kpm]
-        # hdu_blm = fits.ImageHDU(np.diag(KPO.kpi.RED).dot(KPO.kpi.TFM))
-        # hdu_blm.header["EXTNAME"] = "BLM-MAT"
-        # hdul += [hdu_blm]
-        # hdu_kpd = fits.ImageHDU(np.array(KPO.KPDT))  # rad
-        # hdu_kpd.header["EXTNAME"] = "KP-DATA"
-        # hdul += [hdu_kpd]
-        # hdu_kpe = fits.ImageHDU(kpsig[:, np.newaxis, :])  # rad
-        # hdu_kpe.header["EXTNAME"] = "KP-SIGM"
-        # hdul += [hdu_kpe]
-        # hdu_kpc = fits.ImageHDU(kpcov[:, np.newaxis, :])  # rad^2
-        # hdu_kpc.header["EXTNAME"] = "KP-COV"
-        # hdul += [hdu_kpc]
-        # cwavel = fits.Column(name="CWAVEL", format="D", array=np.array([wave]))  # m
-        # bwidth = fits.Column(name="BWIDTH", format="D", array=np.array([weff]))  # m
-        # hdu_lam = fits.BinTableHDU.from_columns([cwavel, bwidth])
-        # hdu_lam.header["EXTNAME"] = "CWAVEL"
-        # hdul += [hdu_lam]
-        # hdu_ang = fits.ImageHDU(
-        #     np.array([hdul["SCI"].header["ROLL_REF"] + V3I_YANG] * data_good.shape[0])
-        # )  # deg
-        # hdu_ang.header["EXTNAME"] = "DETPA"
-        # hdul += [hdu_ang]
-        # temp = np.zeros((2, data_good.shape[0], 1, hdul["KER-MAT"].data.shape[1]))
-        # temp[0] = np.real(np.array(KPO.CVIS))
-        # temp[1] = np.imag(np.array(KPO.CVIS))
-        # hdu_vis = fits.ImageHDU(temp)
-        # hdu_vis.header["EXTNAME"] = "CVIS-DATA"
-        # hdul += [hdu_vis]
-        # hdul.writeto(path + suffix_out + ".fits", output_verify="fix", overwrite=True)
-        # hdul.close()
+        output_models.ker_mat = KPO.kpi.KPM
+        output_models.blm_mat = np.diag(KPO.kpi.RED).dot(KPO.kpi.TFM)
+        output_models.kp_data = np.array(KPO.KPDT)  # rad
+        output_models.kp_sigm = kpsig[:, np.newaxis, :]  # rad
+        output_models.kp_cov = kpcov[:, np.newaxis, :]  # rad^2
+        output_models.cwavel["CWAVEL"] = np.array([wave])  # m
+        output_models.cwavel["BWIDTH"] = np.array([weff])  # m
+        # TODO: 1 or 2 dimensions?
+        output_models.detpa = np.array(
+            [output_models.meta.wcsinfo.roll_ref + V3I_YANG] * data_good.shape[0]
+        )  # deg
+        temp = np.zeros((2, data_good.shape[0], 1, output_models.ker_mat.shape[1]))
+        temp[0] = np.real(np.array(KPO.CVIS))
+        temp[1] = np.imag(np.array(KPO.CVIS))
+        output_models.cvis_data = temp
 
         self.log.info("--> Extract kerphase step done")
 
