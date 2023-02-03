@@ -4,10 +4,10 @@ $schema: "http://stsci.edu/schemas/fits-schema/fits-schema"
 id: "http://stsci.edu/schemas/jwst_kpi_datamodel/recentercube.schema"
 allOf:
 # NOTE: Not sure need to include all of this (except for cube, but not taking chances)
-- $ref: cube.schema
-- $ref: bunit.schema
-- $ref: photometry.schema
-- $ref: wcsinfo.schema
+- $ref: http://stsci.edu/schemas/jwst_datamodel/cube.schema
+- $ref: http://stsci.edu/schemas/jwst_datamodel/bunit.schema
+- $ref: http://stsci.edu/schemas/jwst_datamodel/photometry.schema
+- $ref: http://stsci.edu/schemas/jwst_datamodel/wcsinfo.schema
 - type: object
   properties:
     data_org:
@@ -30,5 +30,5 @@ allOf:
           datatype: float64
         - name: YSHIFT
           datatype: float64
-- $ref: int_times.schema
-- $ref: variance.schema
+- $ref: http://stsci.edu/schemas/jwst_datamodel/int_times.schema
+- $ref: http://stsci.edu/schemas/jwst_datamodel/variance.schema
