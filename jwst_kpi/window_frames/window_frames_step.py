@@ -143,24 +143,14 @@ class WindowFramesStep(Step):
         output_models = input_models.copy()
         output_models.data = data_windowed
         output_models.err = erro_windowed
-        # try:
-        #     hdul.index_of("SCI-ORG")
-        # except Exception:
-        #     hdu_sci_org = fits.ImageHDU(data)
-        #     hdu_sci_org.header["EXTNAME"] = "SCI-ORG"
-        #     hdu_err_org = fits.ImageHDU(erro)
-        #     hdu_err_org.header["EXTNAME"] = "ERR-ORG"
-        #     hdul += [hdu_sci_org, hdu_err_org]
-        # hdul["SCI"].data = data_windowed
-        # hdul["SCI"].header["WRAD"] = self.wrad
-        # hdul["ERR"].data = erro_windowed
-        # hdul["ERR"].header["WRAD"] = self.wrad
-        # hdu_win = fits.ImageHDU(sgmask)
-        # hdu_win.header["EXTNAME"] = "WINMASK"
-        # hdu_win.header["WRAD"] = self.wrad
-        # hdul += [hdu_win]
-        # hdul.writeto(path + suffix_out + ".fits", output_verify="fix", overwrite=True)
-        # hdul.close()
+        try:
+            # TODO: Try also if in FITS but not in schema (extra keyword/data)?
+            output_models.data_org
+        except AttributeError:
+            output_models.data_org = data
+            output_models.err_org = erro
+        output_models.meta.wrad = self.wrad
+        output_models.sgmask = sgmask
 
         self.log.info("--> Window frames step done")
 
