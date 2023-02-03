@@ -135,3 +135,5 @@ examples/crds_cache
 
 # Ignore .DS_Store file
 *.DS_Store
+
+tests/outputs/
