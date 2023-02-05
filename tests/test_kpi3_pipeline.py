@@ -8,4 +8,5 @@ os.makedirs(output_dir, exist_ok=True)
 
 kpi3_pipe = Kpi3Pipeline()
 kpi3_pipe.output_dir = output_dir
+kpi3_pipe.save_results = True
 output = kpi3_pipe.run(input_file)
