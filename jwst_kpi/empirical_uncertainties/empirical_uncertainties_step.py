@@ -6,6 +6,7 @@ from jwst import datamodels
 from jwst.stpipe import Step
 
 from .. import utils as ut
+from ..datamodels import KPFitsModel
 from .empirical_uncertainties_plots import plot_emp_uncertainties
 
 
@@ -48,8 +49,10 @@ class EmpiricalUncertaintiesStep(Step):
         self.log.info("--> Running empirical uncertainties step...")
 
         # Open file.
+        # TODO: Could use "open" if it can figure out datamodels
         if self.previous_suffix is None:
-            input_models = datamodels.open(input_data)
+            # input_models = datamodels.open(input_data)
+            input_models = KPFitsModel(input_data)
         else:
             raise ValueError("Unexpected previous_suffix attribute")
         kpdat = input_models.kp_data
@@ -123,7 +126,6 @@ class EmpiricalUncertaintiesStep(Step):
             plt.close()
 
         # Save file.
-        # TODO: Handle saving in KPfits file
         output_models = input_models.copy()
         output_models.kp_data = wmdat
         if self.get_emp_err:
