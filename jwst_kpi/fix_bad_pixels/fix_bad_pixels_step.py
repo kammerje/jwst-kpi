@@ -8,6 +8,7 @@ from jwst import datamodels
 from scipy.ndimage import median_filter
 
 from .. import utils as ut
+from ..datamodels import BadPixCubeModel
 from .fix_bad_pixels_plots import plot_badpix
 
 # Bad pixel flags.
@@ -91,14 +92,13 @@ class FixBadPixelsStep(Step):
         good_frames = self.good_frames
 
         # Open file.
+        # TODO: Make a version that uses proper input KPI models
+        # and passes fits keyword: will require a "core KPI" schema with all
+        # new fits keywords. For now "extra_fits" works fine
         if self.previous_suffix is None:
             input_models = datamodels.open(input_data)
         else:
             raise ValueError("Unexpected previous_suffix attribute")
-        # if suffix == "":
-        #     hdul = ut.open_fits(file, suffix=suffix, file_dir=None)
-        # else:
-        #     hdul = ut.open_fits(file, suffix=suffix, file_dir=output_dir)
         data = input_models.data
         erro = input_models.err
         pxdq = input_models.dq
@@ -189,13 +189,18 @@ class FixBadPixelsStep(Step):
         # TODO: How add keywords in pipeline?
         # TODO: Add mask ext
         # TODO: Might want to just save this direclty here instead of using default saving mech
-        output_models = input_models.copy()
+        output_models = BadPixCubeModel()
+        # HACK: Works if input is cube models and all kpi-specific keywords are in extra_fits
+        # BUG: This does not work for FITS that are in input schema but not in output ones -> Need better schema architecture
+        output_models.update(input_models, extra_fits=True)
         if is2d:
             data_bpfixed = data_bpfixed[0]
             erro_bpfixed = erro_bpfixed[0]
+            pxdq = pxdq[0]
             mask = mask[0]
         output_models.data = data_bpfixed
         output_models.err = erro_bpfixed
+        output_models.dq = pxdq
         output_models.meta.fix_meth = self.method
         output_models.dq_mod = mask.astype("uint32")
         output_models.bad_bits = bb
