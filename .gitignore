@@ -137,3 +137,4 @@ examples/crds_cache
 *.DS_Store
 
 tests/outputs/
+example_outputs/
