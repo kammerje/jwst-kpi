@@ -1,6 +1,5 @@
 import os
 
-import matplotlib.patheffects as PathEffects
 import matplotlib.pyplot as plt
 import numpy as np
 # from astropy.io import fits
