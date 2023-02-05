@@ -9,7 +9,7 @@ from ..utils import ut
 from empirical_uncertainties_plot import plot_emp_uncertainties
 
 
-class EmpiricalUncertainties(Step):
+class EmpiricalUncertaintiesStep(Step):
     """
     Compute empirical uncertainties for the kernel phase.
     """

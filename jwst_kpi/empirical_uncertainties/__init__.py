@@ -1,3 +1,3 @@
-from .empirical_uncertainties_step import EmpiricalUncertainties
+from .empirical_uncertainties_step import EmpiricalUncertaintiesStep
 
-__all__ = ["EmpiricalUncertainties"]
+__all__ = ["EmpiricalUncertaintiesStep"]
