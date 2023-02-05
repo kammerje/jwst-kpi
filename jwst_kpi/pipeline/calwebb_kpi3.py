@@ -82,10 +82,17 @@ class Kpi3Pipeline(Pipeline):
         log.info("Starting calwebb_kpi3")
 
         # Make the output directory if it does not exist.
-        # TODO: Handle output (at step level?)
         if self.output_dir is not None:
             if not os.path.exists(self.output_dir):
                 os.makedirs(self.output_dir)
+
+        # Propagate show_plots, output_dir, good_frames
+        for step_name in self.step_defs:
+            step = getattr(self, step_name)
+            step.show_plots = self.show_plots
+            step.output_dir = self.output_dir
+            step.good_frames = self.good_frames
+
 
         # TODO: Preserve "step" name for their process method somewhere?
         with datamodels.open(input_data) as input:
