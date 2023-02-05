@@ -1,6 +1,6 @@
 from pkg_resources import DistributionNotFound, get_distribution
 
-from .calwebb_kpi3 import Kpi3Pipeline, PUPIL_DIR
+from .pipeline.calwebb_kpi3 import Kpi3Pipeline, PUPIL_DIR
 
 try:
     __version__ = get_distribution(__name__).version  # get version from setup
