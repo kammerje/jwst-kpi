@@ -8,6 +8,7 @@ from jwst.stpipe import Step
 from xara import core
 
 from .. import utils as ut
+from ..datamodels import WindowCubeModel
 from .window_frames_plots import plot_window
 
 
@@ -57,15 +58,11 @@ class WindowFramesStep(Step):
         good_frames = self.good_frames
 
         # Open file.
-        # TODO: Mention this in PR
         if self.previous_suffix is None:
             input_models = datamodels.open(input_data)
         else:
             raise ValueError("Unexpected previous_suffix attribute")
-        # if suffix == "":
-        #     hdul = ut.open_fits(file, suffix=suffix, file_dir=None)
-        # else:
-        #     hdul = ut.open_fits(file, suffix=suffix, file_dir=output_dir)
+        # TODO: make dq follow?
         data = input_models.data
         erro = input_models.err
         if data.ndim not in [2, 3]:
@@ -126,23 +123,21 @@ class WindowFramesStep(Step):
             plt.close()
 
         # Save file.
-        # TODO: Mark step completed
-        # TODO: How add keywords in pipeline?
-        # TODO: Might want to just save this direclty here instead of using default saving mech
         if is2d:
             data = data[0]
             erro = erro[0]
             data_windowed = data_windowed[0]
             erro_windowed = erro_windowed[0]
-        output_models = input_models.copy()
+        output_models = WindowCubeModel()
+        output_models.update(input_models, extra_fits=True)
         output_models.data = data_windowed
         output_models.err = erro_windowed
-        try:
-            # TODO: Try also if in FITS but not in schema (extra keyword/data)?
-            output_models.data_org
-        except AttributeError:
+        if (input_models.data_org == 0.0).all():
             output_models.data_org = data
             output_models.err_org = erro
+        else:
+            output_models.data_org = input_models.data_org
+            output_models.err_org = input_models.err_org
         output_models.meta.wrad = self.wrad
         output_models.sgmask = sgmask
 
