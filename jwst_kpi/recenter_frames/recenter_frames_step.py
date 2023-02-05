@@ -278,3 +278,10 @@ class RecenterFramesStep(Step):
         self.log.info("--> Recenter frames step done")
 
         return output_models
+
+    def remove_suffix(self, name):
+        # TODO: This will be repeated between all steps. If too many things like this, do parent "kpistage3step"
+        new_name, separator = super(RecenterFramesStep, self).remove_suffix(name)
+        if new_name == name:
+            new_name, separator = ut.remove_suffix_kpi(new_name)
+        return new_name, separator

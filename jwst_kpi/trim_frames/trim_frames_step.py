@@ -188,3 +188,11 @@ class TrimFramesStep(Step):
         self.log.info("--> Trim frames step done")
 
         return output_models
+
+
+    def remove_suffix(self, name):
+        # TODO: This will be repeated between all steps. If too many things like this, do parent "kpistage3step"
+        new_name, separator = super(TrimFramesStep, self).remove_suffix(name)
+        if new_name == name:
+            new_name, separator = ut.remove_suffix_kpi(new_name)
+        return new_name, separator

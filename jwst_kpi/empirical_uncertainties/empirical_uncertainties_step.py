@@ -143,3 +143,9 @@ class EmpiricalUncertaintiesStep(Step):
         self.log.info("--> Empirical uncertainties step done")
 
         return output_models
+
+    def remove_suffix(self, name):
+        new_name, separator = super(EmpiricalUncertaintiesStep, self).remove_suffix(name)
+        if new_name == name:
+            new_name, separator = ut.remove_suffix_kpi(new_name)
+        return new_name, separator
