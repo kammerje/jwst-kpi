@@ -9,6 +9,8 @@ from xara import core, kpo
 
 from ..constants import (gain, pscale, wave_miri, wave_nircam, wave_niriss,
                          weff_miri, weff_nircam, weff_niriss)
+from ..datamodels import KPFitsModel
+from .. import pupil_data
 from .extract_kerphase_plots import plot_kerphase
 from .. import utils as ut
 
@@ -41,8 +43,8 @@ class ExtractKerphaseStep(Step):
     def process(
         self,
         input_data,
-        recenter_frames_obj,
-        window_frames_obj,
+        # recenter_frames_obj,
+        # window_frames_obj,
     ):
         """
         Run the pipeline step.
@@ -71,18 +73,15 @@ class ExtractKerphaseStep(Step):
         good_frames = self.good_frames
 
         # Open file.
-        # TODO: Mention this in PR
         if self.previous_suffix is None:
             input_models = datamodels.open(input_data)
         else:
             raise ValueError("Unexpected previous_suffix attribute")
-        # if suffix == "":
-        #     hdul = ut.open_fits(file, suffix=suffix, file_dir=None)
-        # else:
-        #     hdul = ut.open_fits(file, suffix=suffix, file_dir=output_dir)
         data = input_models.data
         erro = input_models.err
-        pxdq = input_models.dq
+        # TODO: Fix pxdq
+        # pxdq = input_models.dq
+        pxdq = np.zeros_like(erro)
         # TODO: Handle ORG/MOD
         # try:
         #     data_org = hdul["SCI-ORG"].data
@@ -138,7 +137,7 @@ class ExtractKerphaseStep(Step):
         else:
             PSCALE = pscale[INSTRUME]  # mas
         V3I_YANG = (
-            -input_models.meta.wcsinfo.v3yangle * data.meta.wcsinfo.vparity
+            -input_models.meta.wcsinfo.v3yangle * input_models.meta.wcsinfo.vparity
         )  # deg, counter-clockwise
 
         # Check if the filter is known.
@@ -222,7 +221,8 @@ class ExtractKerphaseStep(Step):
         # - recenter=True or False
         # TODO: this is only for code to work. Probably yields wrong results when recenter is True
         data_org = data.copy()
-        if recenter_frames_obj.skip and window_frames_obj.skip:
+        # if recenter_frames_obj.skip and window_frames_obj.skip:
+        if True:
             # TODO: Update
             # if "SCI-ORG" in hdul:
             #     raise UserWarning(
@@ -243,66 +243,66 @@ class ExtractKerphaseStep(Step):
                         wrad=None,
                         method="LDFT1",
                     )
-        elif recenter_frames_obj.skip and not window_frames_obj.skip:
-            for i in range(nf):
-                if (
-                    good_frames is None
-                    or i in good_frames
-                    or (nf - i) * (-1) in good_frames
-                ):
-                    KPO.extract_KPD_single_frame(
-                        data_org[i],
-                        PSCALE,
-                        wave,
-                        target=None,
-                        recenter=False,
-                        wrad=window_frames_obj.wrad,
-                        method="LDFT1",
-                    )
-        elif not recenter_frames_obj.skip and window_frames_obj.skip:
-            dx = []  # pix
-            dy = []  # pix
-            for i in range(nf):
-                if (
-                    good_frames is None
-                    or i in good_frames
-                    or (nf - i) * (-1) in good_frames
-                ):
-                    temp = KPO.extract_KPD_single_frame(
-                        data_org[i],
-                        PSCALE,
-                        wave,
-                        target=None,
-                        recenter=True,
-                        wrad=None,
-                        method="LDFT1",
-                        algo_cent=recenter_frames_obj.method,
-                        bmax_cent=recenter_frames_obj.bmax,
-                    )
-                    dx += [temp[0]]
-                    dy += [temp[1]]
-        else:
-            dx = []  # pix
-            dy = []  # pix
-            for i in range(nf):
-                if (
-                    good_frames is None
-                    or i in good_frames
-                    or (nf - i) * (-1) in good_frames
-                ):
-                    temp = KPO.extract_KPD_single_frame(
-                        data_org[i],
-                        PSCALE,
-                        wave,
-                        target=None,
-                        recenter=True,
-                        wrad=window_frames_obj.wrad,
-                        method="LDFT1",
-                        algo_cent=recenter_frames_obj.method,
-                        bmax_cent=recenter_frames_obj.bmax,
-                    )
-                    dx += [temp[0]]
-                    dy += [temp[1]]
+        # elif recenter_frames_obj.skip and not window_frames_obj.skip:
+        #     for i in range(nf):
+        #         if (
+        #             good_frames is None
+        #             or i in good_frames
+        #             or (nf - i) * (-1) in good_frames
+        #         ):
+        #             KPO.extract_KPD_single_frame(
+        #                 data_org[i],
+        #                 PSCALE,
+        #                 wave,
+        #                 target=None,
+        #                 recenter=False,
+        #                 wrad=window_frames_obj.wrad,
+        #                 method="LDFT1",
+        #             )
+        # elif not recenter_frames_obj.skip and window_frames_obj.skip:
+        #     dx = []  # pix
+        #     dy = []  # pix
+        #     for i in range(nf):
+        #         if (
+        #             good_frames is None
+        #             or i in good_frames
+        #             or (nf - i) * (-1) in good_frames
+        #         ):
+        #             temp = KPO.extract_KPD_single_frame(
+        #                 data_org[i],
+        #                 PSCALE,
+        #                 wave,
+        #                 target=None,
+        #                 recenter=True,
+        #                 wrad=None,
+        #                 method="LDFT1",
+        #                 algo_cent=recenter_frames_obj.method,
+        #                 bmax_cent=recenter_frames_obj.bmax,
+        #             )
+        #             dx += [temp[0]]
+        #             dy += [temp[1]]
+        # else:
+        #     dx = []  # pix
+        #     dy = []  # pix
+        #     for i in range(nf):
+        #         if (
+        #             good_frames is None
+        #             or i in good_frames
+        #             or (nf - i) * (-1) in good_frames
+        #         ):
+        #             temp = KPO.extract_KPD_single_frame(
+        #                 data_org[i],
+        #                 PSCALE,
+        #                 wave,
+        #                 target=None,
+        #                 recenter=True,
+        #                 wrad=window_frames_obj.wrad,
+        #                 method="LDFT1",
+        #                 algo_cent=recenter_frames_obj.method,
+        #                 bmax_cent=recenter_frames_obj.bmax,
+        #             )
+        #             dx += [temp[0]]
+        #             dy += [temp[1]]
 
         # Extract kernel phase covariance. See:
         # https://ui.adsabs.harvard.edu/abs/2019MNRAS.486..639K/abstract
@@ -349,7 +349,7 @@ class ExtractKerphaseStep(Step):
         data_good = []
         erro_good = []
         pxdq_good = []
-        data_org_good = []
+        # data_org_good = []
         erro_org_good = []
         pxdq_mod_good = []
         for i in range(nf):
@@ -374,21 +374,22 @@ class ExtractKerphaseStep(Step):
         data_good = np.array(data_good)
         erro_good = np.array(erro_good)
         pxdq_good = np.array(pxdq_good)
-        data_org_good = np.array(data_org_good)
+        # data_org_good = np.array(data_org_good)
         erro_org_good = np.array(erro_org_good)
         pxdq_mod_good = np.array(pxdq_mod_good)
         # TODO: Kpfits model for output and udpate with input
-        output_models = input_models.copy()
+        output_models = KPFitsModel()
+        output_models.update(input_models, extra_fits=True)
         output_models.data = data_good[:, np.newaxis, :, :]
         output_models.err = erro_good[:, np.newaxis, :, :]
         output_models.dq = pxdq_good[:, np.newaxis, :, :]
         # TODO: Update ORG and MOD
         # TODO: Simpler handling of repeated try/except's?
-        try:
-            output_models.data_org = data_org_good[:, np.newaxis, :, :]
-            output_models.err_org = err_org_good[:, np.newaxis, :, :]
-        except AttributeError:
-            pass
+        # try:
+        #     output_models.data_org = data_org_good[:, np.newaxis, :, :]
+        #     output_models.err_org = erro_org_good[:, np.newaxis, :, :]
+        # except AttributeError:
+        #     pass
         try:
             output_models.dq_mod = pxdq_mod_good[:, np.newaxis, :, :]
         except Exception:
@@ -411,12 +412,17 @@ class ExtractKerphaseStep(Step):
         try:
             output_models.meta.wrad = input_models.meta.wrad  # pix
         except AttributeError:
-            # TODO: type check will prob raise error
-            output_models.meta.wrad = "NONE"
+            try:
+                output_models.extra_fits.PRIMARY = input_models
+            except AttributeError:
+                # TODO: type check will prob raise error
+                output_models.meta.wrad = "NONE"
         output_models.meta.calflag = False
         output_models.meta.content = "KPFITS1"
         # Aperture coordinates
         # TODO: Can transfer ttypes with datamodels/schemas?
+        # TODO: Check this shape
+        output_models.aperture = np.recarray(KPO.kpi.VAC.shape[0], output_models.aperture.dtype)
         output_models.aperture["XXC"] = KPO.kpi.VAC[:, 0]  # m
         output_models.aperture["YYC"] = KPO.kpi.VAC[:, 1]  # m
         output_models.aperture["TRM"] = KPO.kpi.TRM  # (0 <= 1 <= 1)
@@ -424,9 +430,10 @@ class ExtractKerphaseStep(Step):
         # hdu_ape.header["TTYPE2"] = ("YYC", "Virtual aperture y-coord (meter)")
         # hdu_ape.header["TTYPE3"] = ("TRM", "Virtual aperture transmission (0 < t <= 1)")
         # UV plane
-        output_models.aperture["UUC"] = KPO.kpi.UVC[:, 0]  # m
-        output_models.aperture["VVC"] = KPO.kpi.UVC[:, 1]  # m
-        output_models.aperture["TRM"] = KPO.kpi.RED  # int
+        output_models.uv_plane = np.recarray(KPO.kpi.UVC.shape[0], output_models.uv_plane.dtype)
+        output_models.uv_plane["UUC"] = KPO.kpi.UVC[:, 0]  # m
+        output_models.uv_plane["VVC"] = KPO.kpi.UVC[:, 1]  # m
+        output_models.uv_plane["RED"] = KPO.kpi.RED  # int
         # hdu_uvp.header["TTYPE1"] = ("UUC", "Baseline u-coord (meter)")
         # hdu_uvp.header["TTYPE2"] = ("VVC", "Baseline v-coord (meter)")
         # hdu_uvp.header["TTYPE3"] = ("RED", "Baseline redundancy (int)")
@@ -435,7 +442,9 @@ class ExtractKerphaseStep(Step):
         output_models.kp_data = np.array(KPO.KPDT)  # rad
         output_models.kp_sigm = kpsig[:, np.newaxis, :]  # rad
         output_models.kp_cov = kpcov[:, np.newaxis, :]  # rad^2
-        output_models.cwavel["CWAVEL"] = np.array([wave])  # m
+        wave_arr = np.array([wave])
+        output_models.cwavel = np.recarray(wave_arr.shape, output_models.cwavel.dtype)
+        output_models.cwavel["CWAVEL"] = wave_arr  # m
         output_models.cwavel["BWIDTH"] = np.array([weff])  # m
         # TODO: 1 or 2 dimensions?
         output_models.detpa = np.array(
