@@ -8,6 +8,7 @@ allOf:
 - $ref: http://stsci.edu/schemas/jwst_datamodel/bunit.schema
 - $ref: http://stsci.edu/schemas/jwst_datamodel/photometry.schema
 - $ref: http://stsci.edu/schemas/jwst_datamodel/wcsinfo.schema
+- $ref: kpicore.schema
 - type: object
   properties:
     data_org:
@@ -28,15 +29,5 @@ allOf:
       default: 0.0
       ndim: 2
       datatype: float32
-    meta:
-      type: object
-      properties:
-        wrad:
-          title: Windowing radius
-          type: number
-          fits_keyword: WRAD
-          # NOTE: Putting in primary for now instead of repeating in all extensions
-          # (originally in SCI and ERR)
-          # fits_hdu: PRIMARY
 - $ref: http://stsci.edu/schemas/jwst_datamodel/int_times.schema
 - $ref: http://stsci.edu/schemas/jwst_datamodel/variance.schema

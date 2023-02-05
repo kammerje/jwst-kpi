@@ -8,6 +8,7 @@ allOf:
 - $ref: http://stsci.edu/schemas/jwst_datamodel/bunit.schema
 - $ref: http://stsci.edu/schemas/jwst_datamodel/photometry.schema
 - $ref: http://stsci.edu/schemas/jwst_datamodel/wcsinfo.schema
+- $ref: kpicore.schema
 - type: object
   properties:
     # TODO: if removed dims for all except data in other defs, could kpfits inherit from them?

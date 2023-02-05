@@ -8,6 +8,7 @@ allOf:
 - $ref: http://stsci.edu/schemas/jwst_datamodel/bunit.schema
 - $ref: http://stsci.edu/schemas/jwst_datamodel/photometry.schema
 - $ref: http://stsci.edu/schemas/jwst_datamodel/wcsinfo.schema
+- $ref: kpicore.schema
 - type: object
   properties:
     dq_mod:
@@ -16,20 +17,5 @@ allOf:
       default: 0
       ndim: 3
       datatype: uint32
-    meta:
-      type: object
-      properties:
-        fix_meth:
-          title: Bad pixel fix method
-          type: string
-          fits_keyword: FIX_METH
-          # NOTE: Putting in primary for now instead of repeating in all extensions
-          # (originally in SCI and ERR)
-          # fits_hdu: PRIMARY
-        bad_bits:
-          title: Bit codes considered bad pixels
-          type: string
-          fits_keyword: BAD_BITS
-          fits_hdu: DQ-MOD
 - $ref: http://stsci.edu/schemas/jwst_datamodel/int_times.schema
 - $ref: http://stsci.edu/schemas/jwst_datamodel/variance.schema
