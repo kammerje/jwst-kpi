@@ -7,7 +7,7 @@ from jwst.stpipe import Step
 from jwst import datamodels
 from scipy.ndimage import median_filter
 
-# from .. import utils as ut
+from .. import utils as ut
 from .fix_bad_pixels_plots import plot_badpix
 
 # Bad pixel flags.

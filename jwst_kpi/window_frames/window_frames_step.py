@@ -7,7 +7,7 @@ from jwst import datamodels
 from jwst.stpipe import Step
 from xara import core
 
-# from . import utils as ut
+from .. import utils as ut
 from .window_frames_plots import plot_window
 
 

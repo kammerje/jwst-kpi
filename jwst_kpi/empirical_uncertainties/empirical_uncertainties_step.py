@@ -5,7 +5,7 @@ import numpy as np
 from jwst import datamodels
 from jwst.stpipe import Step
 
-from ..utils import ut
+from .. import utils as ut
 from .empirical_uncertainties_plots import plot_emp_uncertainties
 
 

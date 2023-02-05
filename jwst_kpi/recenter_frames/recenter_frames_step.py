@@ -6,10 +6,11 @@ from jwst import datamodels
 from jwst.stpipe import Step
 from xara import core, kpo
 
-from . import pupil_data
-from ..constants import pscale, wave_nircam, wave_niriss, wave_miri, weff_nircam, weff_niriss, weff_miri
+from .. import pupil_data
+from .. import utils as ut
+from ..constants import (pscale, wave_miri, wave_nircam, wave_niriss,
+                         weff_miri, weff_nircam, weff_niriss)
 from .recenter_frames_plots import plot_recenter
-# from . import utils as ut
 
 PUPIL_DIR = pupil_data.__path__[0]
 

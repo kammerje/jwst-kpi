@@ -9,10 +9,8 @@ from xara import core, kpo
 
 from ..constants import (gain, pscale, wave_miri, wave_nircam, wave_niriss,
                          weff_miri, weff_nircam, weff_niriss)
-from . import pupil_data
 from .extract_kerphase_plots import plot_kerphase
-
-# from . import utils as ut
+from .. import utils as ut
 
 PUPIL_DIR = pupil_data.__path__[0]
 

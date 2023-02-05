@@ -18,7 +18,7 @@ from ..fix_bad_pixels import fix_bad_pixels_step
 from ..recenter_frames import recenter_frames_step
 from ..trim_frames import trim_frames_step
 from ..window_frames import window_frames_step
-from . import pupil_data
+from .. import pupil_data
 
 matplotlib.rcParams.update({"font.size": 14})
 
