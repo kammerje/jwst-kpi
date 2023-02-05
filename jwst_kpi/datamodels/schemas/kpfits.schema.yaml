@@ -132,19 +132,19 @@ allOf:
           # fits_hdu: PRIMARY
         pscale:
           title: Pixel scale (mas)
-          type: float64
+          type: number
           fits_keyword: PSCALE
         gain:
           title: Gain (e-/ADU)
-          type: float64
+          type: number
           fits_keyword: GAIN
         diam:
           title: Telescope diameter (m, flat-to-flat)
-          type: float64
+          type: number
           fits_keyword: DIAM
         exptime:
           title: Exposure time (s, copied from EFFINTTM)
-          type: float64
+          type: number
           fits_keyword: EXPTIME
         dateobs:
           title: Observation date (DATE-OBS + TIME-OBS)
