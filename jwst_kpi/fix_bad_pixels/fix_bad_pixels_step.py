@@ -95,6 +95,7 @@ class FixBadPixelsStep(Step):
         # TODO: Make a version that uses proper input KPI models
         # and passes fits keyword: will require a "core KPI" schema with all
         # new fits keywords. For now "extra_fits" works fine
+        # TODO: If use "previous_suffix", can guess model type directly
         if self.previous_suffix is None:
             input_models = datamodels.open(input_data)
         else:
