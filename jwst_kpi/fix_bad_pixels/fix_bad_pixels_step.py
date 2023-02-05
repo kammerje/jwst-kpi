@@ -191,8 +191,6 @@ class FixBadPixelsStep(Step):
         # TODO: Add mask ext
         # TODO: Might want to just save this direclty here instead of using default saving mech
         output_models = BadPixCubeModel()
-        # HACK: Works if input is cube models and all kpi-specific keywords are in extra_fits
-        # BUG: This does not work for FITS that are in input schema but not in output ones -> Need better schema architecture
         output_models.update(input_models, extra_fits=True)
         if is2d:
             data_bpfixed = data_bpfixed[0]

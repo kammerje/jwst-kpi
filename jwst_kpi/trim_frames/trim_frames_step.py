@@ -178,7 +178,6 @@ class TrimFramesStep(Step):
         # TODO: Output model should be a trimmed cube
         output_models = TrimmedCubeModel()
         output_models.update(input_models)
-        # output_models = input_models.copy()
         output_models.data = data_trimmed
         output_models.err = erro_trimmed
         output_models.dq = pxdq_trimmed
