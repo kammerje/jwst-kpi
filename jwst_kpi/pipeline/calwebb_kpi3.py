@@ -45,6 +45,9 @@ class Kpi3Pipeline(Pipeline):
     class_alias = "calwebb_kpi3"
 
     # TODO: Add parameters
+    # TODO: Propagate show_plots to steps
+    # TODO: Propagate output_dir if not auto done
+    # TODO: Save intermediate
     # TODO: Does None work for list?
     spec = """
         output_dir = string(default=None)
@@ -54,12 +57,12 @@ class Kpi3Pipeline(Pipeline):
 
     # TODO: Replace with proper step names (like real pipeline)
     step_defs = {
-        "trim_frames": trim_frames_step.trim_frames,
-        "fix_bad_pixels": fix_bad_pixels_step.fix_bad_pixels,
-        "recenter_frames": recenter_frames_step.recenter_frames,
-        "window_frames": window_frames_step.window_frames,
-        "extract_kerphase": extract_kerphase_step.extract_kerphase,
-        "empirical_uncertainties": empirical_uncertainties_step.empirical_uncertainties,
+        "trim_frames": trim_frames_step.TrimFramesStep,
+        "fix_bad_pixels": fix_bad_pixels_step.FixBadPixelsStep,
+        "recenter_frames": recenter_frames_step.RecenterFramesStep,
+        "window_frames": window_frames_step.WindowFramesStep,
+        "extract_kerphase": extract_kerphase_step.ExtractKerphaseStep,
+        "empirical_uncertainties": empirical_uncertainties_step.EmpiricalUncertaintiesStep,
     }
 
     # NOTE: `run` will now call this directly because subclass Pipeline
