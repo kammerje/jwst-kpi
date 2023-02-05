@@ -6,7 +6,7 @@ from jwst import datamodels
 from jwst.stpipe import Step
 
 from ..utils import ut
-from empirical_uncertainties_plot import plot_emp_uncertainties
+from .empirical_uncertainties_plots import plot_emp_uncertainties
 
 
 class EmpiricalUncertaintiesStep(Step):
