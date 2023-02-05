@@ -91,7 +91,8 @@ class Kpi3Pipeline(Pipeline):
             step = getattr(self, step_name)
             step.show_plots = self.show_plots
             step.output_dir = self.output_dir
-            step.good_frames = self.good_frames
+            if hasattr(step, "good_frames"):
+                step.good_frames = self.good_frames
 
 
         # TODO: Preserve "step" name for their process method somewhere?

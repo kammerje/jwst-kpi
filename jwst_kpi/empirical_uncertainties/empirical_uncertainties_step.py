@@ -21,7 +21,6 @@ class EmpiricalUncertaintiesStep(Step):
         plot = boolean(default=True)
         previous_suffix = string(default=None)
         show_plots = boolean(default=False)
-        good_frames = int_list(default=None)
         get_emp_err = boolean(default=True)
         get_emp_cor = boolean(default=False)
     """
