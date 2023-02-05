@@ -2,7 +2,6 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
-from jwst import datamodels
 from jwst.stpipe import Step
 
 from .. import utils as ut
@@ -50,7 +49,6 @@ class EmpiricalUncertaintiesStep(Step):
         # Open file.
         # TODO: Could use "open" if it can figure out datamodels
         if self.previous_suffix is None:
-            # input_models = datamodels.open(input_data)
             input_models = KPFitsModel(input_data)
         else:
             raise ValueError("Unexpected previous_suffix attribute")
