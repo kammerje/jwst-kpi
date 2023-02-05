@@ -25,7 +25,7 @@ class WindowFramesStep(Step):
     spec = f"""
         plot = boolean(default=True)
         previous_suffix = string(default=None)
-        wrad = int(default={WRAD_DEFAULT})
+        wrad = integer(default={WRAD_DEFAULT})
         show_plots = boolean(default=False)
         good_frames = int_list(default=None)
     """

@@ -32,7 +32,7 @@ class ExtractKerphaseStep(Step):
     spec = """
         plot = boolean(default=True)
         previous_suffix = string(default=None)
-        instrume_allowed = string_list(default=["NIRCAM", "NIRISS", "MIRI"])
+        instrume_allowed = string_list(default=list('NIRCAM', 'NIRISS', 'MIRI'))
         bmax = float(default=None)
         pupil_path = string(default=None)
         verbose = boolean(default=False)
