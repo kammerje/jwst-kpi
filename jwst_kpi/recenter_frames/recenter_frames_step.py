@@ -6,6 +6,8 @@ from jwst import datamodels
 from jwst.stpipe import Step
 from xara import core, kpo
 
+from jwst_kpi.datamodels import RecenterCubeModel
+
 from .. import pupil_data
 from .. import utils as ut
 from ..constants import (pscale, wave_miri, wave_nircam, wave_niriss,
@@ -62,15 +64,11 @@ class RecenterFramesStep(Step):
         good_frames = self.good_frames
 
         # Open file. Use default pipeline way unless "previous suffix is used"
-        # TODO: Mention this in PR
         if self.previous_suffix is None:
             input_models = datamodels.open(input_data)
         else:
             raise ValueError("Unexpected previous_suffix attribute")
-        # if suffix == "":
-        #     hdul = ut.open_fits(file, suffix=suffix, file_dir=None)
-        # else:
-        #     hdul = ut.open_fits(file, suffix=suffix, file_dir=output_dir)
+        # TODO: Make dq (and dq mod??) follow with erro and data
         data = input_models.data
         erro = input_models.err
         if data.ndim not in [2, 3]:
@@ -110,7 +108,7 @@ class RecenterFramesStep(Step):
         else:
             PSCALE = pscale[INSTRUME]  # mas
         V3I_YANG = (
-            - input_models.meta.wcsinfo.v3yangle * data.meta.wcsinfo.vparity
+            -input_models.meta.wcsinfo.v3yangle * input_models.meta.wcsinfo.vparity
         )  # deg, counter-clockwise
 
         if "FPNM" in self.method:
@@ -255,26 +253,27 @@ class RecenterFramesStep(Step):
             plt.close()
 
         # Save file.
-        # TODO: Mark step completed
-        # TODO: How add keywords in pipeline?
-        # TODO: Might want to just save this direclty here instead of using default saving mech
+        output_models = RecenterCubeModel()
+        output_models.update(input_models, extra_fits=True)
         if is2d:
             data = data[0]
             erro = erro[0]
             data_recentered = data_recentered[0]
             erro_recentered = erro_recentered[0]
-        output_models = input_models.copy()
         output_models.data = data_recentered
         output_models.err = erro_recentered
         output_models.data_org = data
         output_models.err_org = erro
-        # TODO: This might not work, maybe need to create full imshift rec array
+        # TODO: This might not work, maybe need to create full imshift rec array first?
         if is2d:
-            output_models.imshift["XSHIFT"] = np.array([dx])  # pix
-            output_models.imshift["YSHIFT"] = np.array([dy])  # pix
+            dx_arr = np.array([dx])  # pix
+            dy_arr = np.array([dy])  # pix
         else:
-            output_models.imshift["XSHIFT"] = np.array(dx)  # pix
-            output_models.imshift["YSHIFT"] = np.array(dy)  # pix
+            dx_arr = np.array(dx)  # pix
+            dy_arr = np.array(dy)  # pix
+        output_models.imshift = np.recarray(dx_arr.shape, output_models.imshift.dtype)
+        output_models.imshift["XSHIFT"] = dx_arr
+        output_models.imshift["YSHIFT"] = dy_arr
 
         self.log.info("--> Recenter frames step done")
 
