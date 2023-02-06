@@ -349,34 +349,42 @@ class ExtractKerphaseStep(Step):
             output_models.dq_mod = pxdq_mod_good[:, np.newaxis, :, :]
         except Exception:
             pass
-        output_models.meta.pscale = PSCALE
+        output_models.meta.kpi_extract.pscale = PSCALE
         # TODO: Handle gain_kwd earlier and then use this to get without if/else
         if INSTRUME == "NIRCAM":
-            output_models.meta.gain = gain[INSTRUME + "_" + CHANNEL]  # e-/ADU
+            output_models.meta.kpi_extract.gain = gain[
+                INSTRUME + "_" + CHANNEL
+            ]  # e-/ADU
         else:
-            output_models.meta.gain = gain[INSTRUME]  # e-/ADU
+            output_models.meta.kpi_extract.gain = gain[INSTRUME]  # e-/ADU
         # TODO: Store in constants instead of hardcoding
-        output_models.meta.diam = 6.559348  # m (flat-to-flat)
-        output_models.meta.exptime = input_models.meta.exposure.integration_time
-        output_models.meta.dateobs = (
+        output_models.meta.kpi_extract.diam = 6.559348  # m (flat-to-flat)
+        output_models.meta.kpi_extract.exptime = (
+            input_models.meta.exposure.integration_time
+        )
+        output_models.meta.kpi_extract.dateobs = (
             input_models.meta.observation.date
             + "T"
             + input_models.meta.observation.time
         )  # YYYY-MM-DDTHH:MM:SS.MMM
-        output_models.meta.procsoft = "CALWEBB_KPI3"
+        output_models.meta.kpi_extract.procsoft = "CALWEBB_KPI3"
         try:
-            output_models.meta.wrad = input_models.meta.wrad  # pix
+            output_models.meta.kpi_preprocess.wrad = (
+                input_models.meta.kpi_preprocess.wrad
+            )  # pix
         except AttributeError:
             try:
                 output_models.extra_fits.PRIMARY = input_models
             except AttributeError:
                 # TODO: type check will prob raise error
-                output_models.meta.wrad = "NONE"
-        output_models.meta.calflag = False
-        output_models.meta.content = "KPFITS1"
+                output_models.meta.kpi_preprocess.wrad = "NONE"
+        output_models.meta.kpi_extract.calflag = False
+        output_models.meta.kpi_extract.content = "KPFITS1"
         # Aperture coordinates
         # TODO: Check this shape
-        output_models.aperture = np.recarray(KPO.kpi.VAC.shape[0], output_models.aperture.dtype)
+        output_models.aperture = np.recarray(
+            KPO.kpi.VAC.shape[0], output_models.aperture.dtype
+        )
         output_models.aperture["XXC"] = KPO.kpi.VAC[:, 0]  # m
         output_models.aperture["YYC"] = KPO.kpi.VAC[:, 1]  # m
         output_models.aperture["TRM"] = KPO.kpi.TRM  # (0 <= 1 <= 1)

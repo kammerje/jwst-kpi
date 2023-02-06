@@ -134,7 +134,7 @@ class WindowFramesStep(Step):
         else:
             output_models.data_org = input_models.data_org
             output_models.err_org = input_models.err_org
-        output_models.meta.wrad = self.wrad
+        output_models.meta.kpi_preprocess.wrad = self.wrad
         output_models.sgmask = sgmask
         output_models.meta.cal_step_kpi.window = "COMPLETE"
 

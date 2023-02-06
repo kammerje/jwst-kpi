@@ -124,44 +124,41 @@ allOf:
     meta:
       type: object
       properties:
-        wrad:
-          title: Windowing radius
-          type: number
-          fits_keyword: WRAD
-          # NOTE: Putting in primary for now instead of repeating in all extensions
-          # (originally in SCI and ERR)
-          # fits_hdu: PRIMARY
-        pscale:
-          title: Pixel scale (mas)
-          type: number
-          fits_keyword: PSCALE
-        gain:
-          title: Gain (e-/ADU)
-          type: number
-          fits_keyword: GAIN
-        diam:
-          title: Telescope diameter (m, flat-to-flat)
-          type: number
-          fits_keyword: DIAM
-        exptime:
-          title: Exposure time (s, copied from EFFINTTM)
-          type: number
-          fits_keyword: EXPTIME
-        dateobs:
-          title: Observation date (DATE-OBS + TIME-OBS)
-          type: string
-          fits_keyword: DATEOBS
-        procsoft:
-          title: Processing software used
-          type: string
-          fits_keyword: PROCSOFT
-        calflag:
-          title: Calibrated data
-          type: boolean
-          fits_keyword: CALFLAG
-        content:
-          title: "Content of file"
-          type: string
-          figs_keyword: CONTENT
+        kpi_extract:
+          title: KPI extraction information
+          type: object
+          properties:
+            pscale:
+              title: Pixel scale (mas)
+              type: number
+              fits_keyword: PSCALE
+            gain:
+              title: Gain (e-/ADU)
+              type: number
+              fits_keyword: GAIN
+            diam:
+              title: Telescope diameter (m, flat-to-flat)
+              type: number
+              fits_keyword: DIAM
+            exptime:
+              title: Exposure time (s, copied from EFFINTTM)
+              type: number
+              fits_keyword: EXPTIME
+            dateobs:
+              title: Observation date (DATE-OBS + TIME-OBS)
+              type: string
+              fits_keyword: DATEOBS
+            procsoft:
+              title: Processing software used
+              type: string
+              fits_keyword: PROCSOFT
+            calflag:
+              title: Calibrated data
+              type: boolean
+              fits_keyword: CALFLAG
+            content:
+              title: "Content of file"
+              type: string
+              figs_keyword: CONTENT
 - $ref: http://stsci.edu/schemas/jwst_datamodel/int_times.schema
 - $ref: http://stsci.edu/schemas/jwst_datamodel/variance.schema

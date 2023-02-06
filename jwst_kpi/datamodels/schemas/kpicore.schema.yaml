@@ -7,37 +7,41 @@ properties:
   meta:
     type: object
     properties:
-      cent_x:
-        title: Centroid in original image along X axis
-        type: number
-        fits_keyword: CENT_X
-        # NOTE: Putting in primary for now instead of repeating in all extensions
-        # fits_hdu: SCI
-      cent_y:
-        title: Centroid in original image along Y axis
-        type: number
-        fits_keyword: CENT_Y
-        # NOTE: Putting in primary for now instead of repeating in all extensions
-        # fits_hdu: SCI
-      fix_meth:
-        title: Bad pixel fix method
-        type: string
-        fits_keyword: FIX_METH
-        # NOTE: Putting in primary for now instead of repeating in all extensions
-        # (originally in SCI and ERR)
-        # fits_hdu: PRIMARY
-      bad_bits:
-        title: Bit codes considered bad pixels
-        type: string
-        fits_keyword: BAD_BITS
-        fits_hdu: DQ-MOD
-      wrad:
-        title: Windowing radius
-        type: number
-        fits_keyword: WRAD
-        # NOTE: Putting in primary for now instead of repeating in all extensions
-        # (originally in SCI and ERR)
-        # fits_hdu: PRIMARY
+      kpi_preprocess:
+        title: Preprocessing information for KPI pipeline
+        type: object
+        properties:
+          cent_x:
+            title: Centroid in original image along X axis
+            type: number
+            fits_keyword: CENT_X
+            # NOTE: Putting in primary for now instead of repeating in all extensions
+            # fits_hdu: SCI
+          cent_y:
+            title: Centroid in original image along Y axis
+            type: number
+            fits_keyword: CENT_Y
+            # NOTE: Putting in primary for now instead of repeating in all extensions
+            # fits_hdu: SCI
+          fix_meth:
+            title: Bad pixel fix method
+            type: string
+            fits_keyword: FIX_METH
+            # NOTE: Putting in primary for now instead of repeating in all extensions
+            # (originally in SCI and ERR)
+            # fits_hdu: PRIMARY
+          bad_bits:
+            title: Bit codes considered bad pixels
+            type: string
+            fits_keyword: BAD_BITS
+            fits_hdu: DQ-MOD
+          wrad:
+            title: Windowing radius
+            type: number
+            fits_keyword: WRAD
+            # NOTE: Putting in primary for now instead of repeating in all extensions
+            # (originally in SCI and ERR)
+            # fits_hdu: PRIMARY
       cal_step_kpi:
         title: Calibration step information for KPI steps
         type: object

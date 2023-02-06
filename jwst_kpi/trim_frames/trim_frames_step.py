@@ -175,8 +175,8 @@ class TrimFramesStep(Step):
         output_models.data = data_trimmed
         output_models.err = erro_trimmed
         output_models.dq = pxdq_trimmed
-        output_models.meta.cent_x = ww_max[1]
-        output_models.meta.cent_y = ww_max[0]
+        output_models.meta.kpi_preprocess.cent_x = ww_max[1]
+        output_models.meta.kpi_preprocess.cent_y = ww_max[0]
         output_models.meta.cal_step_kpi.trim = "COMPLETE"
 
         self.log.info("--> Trim frames step done")
