@@ -2,7 +2,7 @@ import os
 
 from jwst_kpi.empirical_uncertainties import EmpiricalUncertaintiesStep
 
-input_file = "tests/outputs/jw01093011001_03103_00001_nis_extractkerphasestep.fits"
+input_file = "tests/outputs/jw01093011001_03103_00001_nis_extractkerphasestep_kpfits.fits"
 output_dir = "tests/outputs/"
 os.makedirs(output_dir, exist_ok=True)
 
