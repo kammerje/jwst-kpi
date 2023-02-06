@@ -38,3 +38,37 @@ properties:
         # NOTE: Putting in primary for now instead of repeating in all extensions
         # (originally in SCI and ERR)
         # fits_hdu: PRIMARY
+      cal_step_kpi:
+        title: Calibration step information for KPI steps
+        type: object
+        properties:
+          trim:
+            title: Trim Frames to Smaller Size
+            type: string
+            fits_keyword: S_TRIM
+            blend_table: True
+          fix_badpix:
+            title: Fix Bad Pixels in Image
+            type: string
+            fits_keyword: S_BADPIX
+            blend_table: True
+          recenter:
+            title: Recenter Image to Given Position
+            type: string
+            fits_keyword: S_RECENT
+            blend_table: True
+          window:
+            title: Window Frames with Supergaussian
+            type: string
+            fits_keyword: S_WINDOW
+            blend_table: True
+          extract:
+            title: Kernel Phase Extraction
+            type: string
+            fits_keyword: S_EXTKER
+            blend_table: True
+          empirical_uncert:
+            title: Calculate Empirical KPI Uncertainties
+            type: string
+            fits_keyword: S_EMPUNC
+            blend_table: True

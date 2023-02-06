@@ -273,6 +273,7 @@ class RecenterFramesStep(Step):
         output_models.imshift = np.recarray(dx_arr.shape, output_models.imshift.dtype)
         output_models.imshift["XSHIFT"] = dx_arr
         output_models.imshift["YSHIFT"] = dy_arr
+        output_models.meta.cal_step_kpi.recenter = "COMPLETE"
 
         self.log.info("--> Recenter frames step done")
 

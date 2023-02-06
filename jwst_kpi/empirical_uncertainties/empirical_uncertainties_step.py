@@ -136,6 +136,7 @@ class EmpiricalUncertaintiesStep(Step):
             output_models.kp_sigm = wmsig
             output_models.kp_cov = wmcov
         output_models.detpa = np.array([np.mean(input_models.detpa)])
+        output_models.meta.cal_step_kpi.empirical_uncert = "COMPLETE"
 
         self.log.info("--> Empirical uncertainties step done")
 

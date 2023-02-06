@@ -139,6 +139,7 @@ class WindowFramesStep(Step):
             output_models.err_org = input_models.err_org
         output_models.meta.wrad = self.wrad
         output_models.sgmask = sgmask
+        output_models.meta.cal_step_kpi.window = "COMPLETE"
 
         self.log.info("--> Window frames step done")
 

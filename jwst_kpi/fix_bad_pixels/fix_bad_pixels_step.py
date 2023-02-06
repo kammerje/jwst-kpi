@@ -163,6 +163,7 @@ class FixBadPixelsStep(Step):
         output_models.meta.fix_meth = self.method
         output_models.dq_mod = mask.astype("uint32")
         output_models.bad_bits = bb
+        output_models.meta.cal_step_kpi.fix_badpix = "COMPLETE"
 
         self.log.info("--> Fix bad pixels step done")
 

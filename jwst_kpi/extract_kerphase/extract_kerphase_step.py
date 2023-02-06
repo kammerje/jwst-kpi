@@ -451,6 +451,7 @@ class ExtractKerphaseStep(Step):
         temp[0] = np.real(np.array(KPO.CVIS))
         temp[1] = np.imag(np.array(KPO.CVIS))
         output_models.cvis_data = temp
+        output_models.meta.cal_step_kpi.extract = "COMPLETE"
 
         self.log.info("--> Extract kerphase step done")
 
