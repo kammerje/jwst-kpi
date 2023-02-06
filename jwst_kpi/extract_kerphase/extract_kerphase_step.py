@@ -433,3 +433,7 @@ class ExtractKerphaseStep(Step):
         if new_name == name:
             new_name, separator = ut.remove_suffix_kpi(new_name)
         return new_name, separator
+
+    def default_suffix(self):
+        og_default = super(ExtractKerphaseStep, self).default_suffix()
+        return f"{og_default}_kpfits"

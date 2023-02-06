@@ -147,3 +147,7 @@ class EmpiricalUncertaintiesStep(Step):
         if new_name == name:
             new_name, separator = ut.remove_suffix_kpi(new_name)
         return new_name, separator
+
+    def default_suffix(self):
+        og_default = super(EmpiricalUncertaintiesStep, self).default_suffix()
+        return f"{og_default}_emp_kpfits"
