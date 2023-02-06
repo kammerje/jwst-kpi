@@ -23,6 +23,12 @@ allOf:
       default: 0.0
       ndim: 3
       datatype: float32
+    dq_mod:
+      title: DQ Mask from bp fix
+      fits_hdu: DQ-MOD
+      default: 0
+      ndim: 3
+      datatype: uint32
     imshift:
       title: Table of shifts used to recenter image
       fits_hdu: IMSHIFT

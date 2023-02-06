@@ -264,6 +264,12 @@ class RecenterFramesStep(Step):
         output_models.err = erro_recentered
         output_models.data_org = data
         output_models.err_org = erro
+        # TODO: DQ is not recentered. Should it be, at pixel level?
+        output_models.dq = input_models.dq
+        try:
+            output_models.dq_mod = input_models.dq_mod
+        except AttributeError:
+            self.log.warning("Could not pass bad pixel mask from BP step")
         if is2d:
             dx_arr = np.array([dx])  # pix
             dy_arr = np.array([dy])  # pix

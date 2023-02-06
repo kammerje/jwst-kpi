@@ -12,6 +12,7 @@ from ..datamodels import WindowCubeModel
 from .window_frames_plots import plot_window
 from ..constants import WRAD_DEFAULT
 
+
 class WindowFramesStep(Step):
     """
     Window frames.
@@ -134,6 +135,11 @@ class WindowFramesStep(Step):
         else:
             output_models.data_org = input_models.data_org
             output_models.err_org = input_models.err_org
+        output_models.dq = input_models.dq
+        try:
+            output_models.dq_mod = input_models.dq_mod
+        except AttributeError:
+            self.log.warning("Could not pass bad pixel mask from BP step")
         output_models.meta.kpi_preprocess.wrad = self.wrad
         output_models.sgmask = sgmask
         output_models.meta.cal_step_kpi.window = "COMPLETE"
