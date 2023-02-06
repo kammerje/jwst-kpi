@@ -152,7 +152,7 @@ class ExtractKerphaseStep(Step):
         if FILTER not in filter_allowed:
             raise UserWarning("Unknown filter")
 
-        # TODO: Dup code lasts until this block
+        # TODO: Dup code lasts until this next block (inclusively)
         # Get pupil model path and filter properties.
         pupil_name = input_models.meta.instrument.pupil
         if INSTRUME == "NIRCAM":
@@ -277,7 +277,6 @@ class ExtractKerphaseStep(Step):
         kpcor = np.array(kpcor)
 
         # Get output file path.
-        # path = ut.get_output_base(file, output_dir=output_dir)
         mk_path = self.make_output_path()
         stem = os.path.splitext(mk_path)[0]
 
@@ -339,7 +338,7 @@ class ExtractKerphaseStep(Step):
             ]  # e-/ADU
         else:
             output_models.meta.kpi_extract.gain = gain[INSTRUME]  # e-/ADU
-        # TODO: Store in constants instead of hardcoding
+        # TODO: Store in constants instead of hardcoding here
         output_models.meta.kpi_extract.diam = 6.559348  # m (flat-to-flat)
         output_models.meta.kpi_extract.exptime = (
             input_models.meta.exposure.integration_time
