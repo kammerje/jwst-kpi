@@ -7,12 +7,12 @@ from jwst import datamodels
 from jwst.stpipe import Step
 from xara import core, kpo
 
+from .. import pupil_data
+from .. import utils as ut
 from ..constants import (gain, pscale, wave_miri, wave_nircam, wave_niriss,
                          weff_miri, weff_nircam, weff_niriss)
 from ..datamodels import KPFitsModel
-from .. import pupil_data
 from .extract_kerphase_plots import plot_kerphase
-from .. import utils as ut
 
 PUPIL_DIR = pupil_data.__path__[0]
 
@@ -392,7 +392,9 @@ class ExtractKerphaseStep(Step):
         # hdu_ape.header["TTYPE2"] = ("YYC", "Virtual aperture y-coord (meter)")
         # hdu_ape.header["TTYPE3"] = ("TRM", "Virtual aperture transmission (0 < t <= 1)")
         # UV plane
-        output_models.uv_plane = np.recarray(KPO.kpi.UVC.shape[0], output_models.uv_plane.dtype)
+        output_models.uv_plane = np.recarray(
+            KPO.kpi.UVC.shape[0], output_models.uv_plane.dtype
+        )
         output_models.uv_plane["UUC"] = KPO.kpi.UVC[:, 0]  # m
         output_models.uv_plane["VVC"] = KPO.kpi.UVC[:, 1]  # m
         output_models.uv_plane["RED"] = KPO.kpi.RED  # int

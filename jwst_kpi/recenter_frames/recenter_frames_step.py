@@ -189,7 +189,7 @@ class RecenterFramesStep(Step):
 
         # Recenter frames.
         if self.method not in self.method_allowed:
-            raise UserWarning("Unknown recentering method")
+            raise ValueError("Unknown recentering method")
         else:
             data_recentered = []
             erro_recentered = []

@@ -8,17 +8,16 @@ import logging
 import os
 
 import matplotlib
-
-from jwst.stpipe import Pipeline
 from jwst import datamodels
+from jwst.stpipe import Pipeline
 
-from ..extract_kerphase import extract_kerphase_step
+from .. import pupil_data
 from ..empirical_uncertainties import empirical_uncertainties_step
+from ..extract_kerphase import extract_kerphase_step
 from ..fix_bad_pixels import fix_bad_pixels_step
 from ..recenter_frames import recenter_frames_step
 from ..trim_frames import trim_frames_step
 from ..window_frames import window_frames_step
-from .. import pupil_data
 
 matplotlib.rcParams.update({"font.size": 14})
 
