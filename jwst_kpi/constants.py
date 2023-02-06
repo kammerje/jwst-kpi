@@ -58,3 +58,5 @@ for i in range(len(filter_list)):
 del filter_list
 
 WRAD_DEFAULT = 24
+
+DIAM = 6.559348  # / Flat-to-flat distance across pupil in V3 axis

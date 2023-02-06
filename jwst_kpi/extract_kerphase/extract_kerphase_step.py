@@ -9,7 +9,7 @@ from xara import core, kpo
 from .. import pupil_data
 from .. import utils as ut
 from ..constants import (gain, pscale, wave_miri, wave_nircam, wave_niriss,
-                         weff_miri, weff_nircam, weff_niriss)
+                         weff_miri, weff_nircam, weff_niriss, DIAM)
 from ..datamodels import KPFitsModel
 from .extract_kerphase_plots import plot_kerphase
 
@@ -107,16 +107,11 @@ class ExtractKerphaseStep(Step):
             data = data[np.newaxis]
             erro = erro[np.newaxis]
             pxdq = pxdq[np.newaxis]
-            # TODO: use has_org or zero arrays
-            try:
+            if has_org:
                 data_org = data_org[np.newaxis]
                 erro_org = erro_org[np.newaxis]
-            except NameError:
-                pass
-            try:
+            if has_mod:
                 pxdq_mod = pxdq_mod[np.newaxis]
-            except NameError:
-                pass
         else:
             is2d = False
         nf, sy, sx = data.shape
@@ -217,9 +212,6 @@ class ExtractKerphaseStep(Step):
             ID="",
         )
         m2pix = core.mas2rad(PSCALE) * sx / wave
-        # TODO: Clean up or set-up with T/F switch
-        # KPO.kpi.plot_pupil_and_uv()
-        # plt.show()
 
         do_recenter = self.recenter_method is not None
         do_window = self.wrad is not None
@@ -227,7 +219,6 @@ class ExtractKerphaseStep(Step):
             raise ValueError("Unknown recentering method")
 
         # Recenter frames, window frames, and extract kernel phase.
-        # TODO: Does this mean recentering is always done twice?
         if do_recenter or do_window:
             data_extract = data_org
         else:
@@ -330,8 +321,6 @@ class ExtractKerphaseStep(Step):
         output_models.data = data_good[:, np.newaxis, :, :]
         output_models.err = erro_good[:, np.newaxis, :, :]
         output_models.dq = pxdq_good[:, np.newaxis, :, :]
-        # TODO: Update ORG and MOD
-        # TODO: Simpler handling of repeated try/except's?
         if has_org:
             output_models.data_org = data_org_good[:, np.newaxis, :, :]
             output_models.err_org = erro_org_good[:, np.newaxis, :, :]
@@ -345,8 +334,7 @@ class ExtractKerphaseStep(Step):
             ]  # e-/ADU
         else:
             output_models.meta.kpi_extract.gain = gain[INSTRUME]  # e-/ADU
-        # TODO: Store in constants instead of hardcoding here
-        output_models.meta.kpi_extract.diam = 6.559348  # m (flat-to-flat)
+        output_models.meta.kpi_extract.diam = DIAM  # m (flat-to-flat)
         output_models.meta.kpi_extract.exptime = (
             input_models.meta.exposure.integration_time
         )
@@ -356,20 +344,19 @@ class ExtractKerphaseStep(Step):
             + input_models.meta.observation.time
         )  # YYYY-MM-DDTHH:MM:SS.MMM
         output_models.meta.kpi_extract.procsoft = "CALWEBB_KPI3"
-        try:
-            output_models.meta.kpi_preprocess.wrad = (
-                input_models.meta.kpi_preprocess.wrad
-            )  # pix
-        except AttributeError:
+        if do_window:
             try:
-                output_models.extra_fits.PRIMARY = input_models
+                output_models.meta.kpi_preprocess.wrad = (
+                    input_models.meta.kpi_preprocess.wrad
+                )  # pix
             except AttributeError:
-                # TODO: type check will prob raise error
-                output_models.meta.kpi_preprocess.wrad = "NONE"
+                try:
+                    output_models.meta.kpi_preprocess.wrad = self.wrad
+                except AttributeError:
+                    pass
         output_models.meta.kpi_extract.calflag = False
         output_models.meta.kpi_extract.content = "KPFITS1"
         # Aperture coordinates
-        # TODO: Check this shape
         output_models.aperture = np.recarray(
             KPO.kpi.VAC.shape[0], output_models.aperture.dtype
         )

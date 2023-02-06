@@ -11,7 +11,6 @@ allOf:
 - $ref: kpicore.schema
 - type: object
   properties:
-    # TODO: if removed dims for all except data in other defs, could kpfits inherit from them?
     data:
       title: The science data
       fits_hdu: SCI
