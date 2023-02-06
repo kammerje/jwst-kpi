@@ -34,6 +34,10 @@ class ExtractKerphaseStep(Step):
         previous_suffix = string(default=None)
         instrume_allowed = string_list(default=list('NIRCAM', 'NIRISS', 'MIRI'))
         bmax = float(default=None)
+        recenter_method = string(default=None)
+        recenter_bmax = float(default=6.0)
+        recenter_method_allowed = string_list(default=None)
+        wrad = integer(default=None)
         pupil_path = string(default=None)
         verbose = boolean(default=False)
         show_plots = boolean(default=False)
@@ -43,8 +47,6 @@ class ExtractKerphaseStep(Step):
     def process(
         self,
         input_data,
-        # recenter_frames_obj,
-        # window_frames_obj,
     ):
         """
         Run the pipeline step.
@@ -212,6 +214,11 @@ class ExtractKerphaseStep(Step):
         # KPO.kpi.plot_pupil_and_uv()
         # plt.show()
 
+        do_recenter = self.recenter_method is not None
+        do_window = self.wrad is not None
+        if do_recenter and self.recenter_method not in self.recenter_method_allowed:
+            raise ValueError("Unknown recentering method")
+
         # Recenter frames, window frames, and extract kernel phase.
         # TODO: Does this mean recentering is always done twice?
         # TODO: Have single loop, do setup before with if statements of following:
@@ -221,88 +228,38 @@ class ExtractKerphaseStep(Step):
         # - recenter=True or False
         # TODO: this is only for code to work. Probably yields wrong results when recenter is True
         data_org = data.copy()
-        # if recenter_frames_obj.skip and window_frames_obj.skip:
-        if True:
-            # TODO: Update
-            # if "SCI-ORG" in hdul:
-            #     raise UserWarning(
-            #         "There is a SCI-ORG FITS file extension although both the recentering and the windowing steps were skipped"
-            #     )
-            for i in range(nf):
-                if (
-                    good_frames is None
-                    or i in good_frames
-                    or (nf - i) * (-1) in good_frames
-                ):
-                    KPO.extract_KPD_single_frame(
-                        data[i],
-                        PSCALE,
-                        wave,
-                        target=None,
-                        recenter=False,
-                        wrad=None,
-                        method="LDFT1",
-                    )
-        # elif recenter_frames_obj.skip and not window_frames_obj.skip:
-        #     for i in range(nf):
-        #         if (
-        #             good_frames is None
-        #             or i in good_frames
-        #             or (nf - i) * (-1) in good_frames
-        #         ):
-        #             KPO.extract_KPD_single_frame(
-        #                 data_org[i],
-        #                 PSCALE,
-        #                 wave,
-        #                 target=None,
-        #                 recenter=False,
-        #                 wrad=window_frames_obj.wrad,
-        #                 method="LDFT1",
-        #             )
-        # elif not recenter_frames_obj.skip and window_frames_obj.skip:
-        #     dx = []  # pix
-        #     dy = []  # pix
-        #     for i in range(nf):
-        #         if (
-        #             good_frames is None
-        #             or i in good_frames
-        #             or (nf - i) * (-1) in good_frames
-        #         ):
-        #             temp = KPO.extract_KPD_single_frame(
-        #                 data_org[i],
-        #                 PSCALE,
-        #                 wave,
-        #                 target=None,
-        #                 recenter=True,
-        #                 wrad=None,
-        #                 method="LDFT1",
-        #                 algo_cent=recenter_frames_obj.method,
-        #                 bmax_cent=recenter_frames_obj.bmax,
-        #             )
-        #             dx += [temp[0]]
-        #             dy += [temp[1]]
-        # else:
-        #     dx = []  # pix
-        #     dy = []  # pix
-        #     for i in range(nf):
-        #         if (
-        #             good_frames is None
-        #             or i in good_frames
-        #             or (nf - i) * (-1) in good_frames
-        #         ):
-        #             temp = KPO.extract_KPD_single_frame(
-        #                 data_org[i],
-        #                 PSCALE,
-        #                 wave,
-        #                 target=None,
-        #                 recenter=True,
-        #                 wrad=window_frames_obj.wrad,
-        #                 method="LDFT1",
-        #                 algo_cent=recenter_frames_obj.method,
-        #                 bmax_cent=recenter_frames_obj.bmax,
-        #             )
-        #             dx += [temp[0]]
-        #             dy += [temp[1]]
+        if do_recenter or do_window:
+            data_extract = data_org
+        else:
+            data_extract = data
+        # TODO: Update
+        # if "SCI-ORG" in hdul:
+        #     raise UserWarning(
+        #         "There is a SCI-ORG FITS file extension although both the recentering and the windowing steps were skipped"
+        #     )
+        if do_recenter:
+            dx = []  # pix
+            dy = []  # pix
+        for i in range(nf):
+            if (
+                good_frames is None
+                or i in good_frames
+                or (nf - i) * (-1) in good_frames
+            ):
+                temp = KPO.extract_KPD_single_frame(
+                    data_extract[i],
+                    PSCALE,
+                    wave,
+                    target=None,
+                    recenter=do_recenter,
+                    wrad=self.wrad,
+                    method="LDFT1",
+                    algo_cent=self.recenter_method,
+                    bmax_cent=self.recenter_bmax,
+                )
+                if do_recenter:
+                    dx += [temp[0]]
+                    dy += [temp[1]]
 
         # Extract kernel phase covariance. See:
         # https://ui.adsabs.harvard.edu/abs/2019MNRAS.486..639K/abstract
@@ -452,6 +409,10 @@ class ExtractKerphaseStep(Step):
         temp[1] = np.imag(np.array(KPO.CVIS))
         output_models.cvis_data = temp
         output_models.meta.cal_step_kpi.extract = "COMPLETE"
+        if do_recenter:
+            output_models.meta.cal_step_kpi.recenter = "COMPLETE"
+        if self.wrad is not None:
+            output_models.meta.cal_step_kpi.window = "COMPLETE"
 
         self.log.info("--> Extract kerphase step done")
 

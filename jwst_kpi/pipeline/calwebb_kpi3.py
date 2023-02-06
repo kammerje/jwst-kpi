@@ -93,9 +93,20 @@ class Kpi3Pipeline(Pipeline):
             # NOTE: Skipped steps are skipped in their own run/process
             input = self.trim_frames(input)
             input = self.fix_bad_pixels(input)
+            # TODO: Skip these two if extract is not skipped?
             input = self.recenter_frames(input)
             input = self.window_frames(input)
+
+            if not self.recenter_frames.skip:
+                self.extract_kerphase.recenter_method = self.recenter_frames.method
+                self.extract_kerphase.recenter_bmax = self.recenter_frames.bmax
+                self.extract_kerphase.recenter_method_allowed = (
+                    self.recenter_frames.method_allowed
+                )
+            if not self.window_frames.skip:
+                self.extract_kerphase.wrad = self.window_frames.wrad
             input = self.extract_kerphase(input)
+
             input = self.empirical_uncertainties(input)
 
         return input
