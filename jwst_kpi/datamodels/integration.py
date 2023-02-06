@@ -9,21 +9,21 @@ if sys.version_info < (3, 9):
 else:
     import importlib.resources as importlib_resources
 
-
 from asdf.resource import DirectoryResourceMapping
+
 from jwst_kpi import datamodels
 
 
 def get_resource_mappings():
     """
-    Get the `jwst.datamodels` resource mappings, that is the schemas for the datamodels.
+    Get the `jwst_kpi.datamodels` resource mappings, that is the schemas for the datamodels.
 
     This method is registered with the `asdf.resource_mappings` entry point for
-    the `jwst_datamodel`.
+    the `jwst_kpi_datamodel`.
 
     Returns
     -------
-    list of the `asdf.resource.ResourceMapping` instances containing the `jwst.datamodels`
+    list of the `asdf.resource.ResourceMapping` instances containing the `jwst_kpi.datamodels`
     schemas.
     """
     resources_root = importlib_resources.files(datamodels)
@@ -35,9 +35,4 @@ def get_resource_mappings():
             resources_root / "schemas",
             "http://stsci.edu/schemas/jwst_kpi_datamodel/",
         ),
-        # TODO: Remove if can confirm not neede
-        # DirectoryResourceMapping(
-        #     resources_root / "metaschema",
-        #     "http://stsci.edu/schemas/fits-schema/",
-        # )
     ]
