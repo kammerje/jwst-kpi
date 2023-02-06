@@ -18,6 +18,7 @@ from ..fix_bad_pixels import fix_bad_pixels_step
 from ..recenter_frames import recenter_frames_step
 from ..trim_frames import trim_frames_step
 from ..window_frames import window_frames_step
+from .. import utils as ut
 
 matplotlib.rcParams.update({"font.size": 14})
 
@@ -109,3 +110,9 @@ class Kpi3Pipeline(Pipeline):
             input = self.empirical_uncertainties(input)
 
         return input
+
+    def remove_suffix(self, name):
+        new_name, separator = super(Kpi3Pipeline, self).remove_suffix(name)
+        if new_name == name:
+            new_name, separator = ut.remove_suffix_kpi(new_name)
+        return new_name, separator
