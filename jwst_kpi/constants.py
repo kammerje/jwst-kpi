@@ -53,3 +53,5 @@ for i in range(len(filter_list)):
     wave_miri[name] = filter_list["WavelengthMean"][i] / 1e4  # micron
     weff_miri[name] = filter_list["WidthEff"][i] / 1e4  # micron
 del filter_list
+
+WRAD_DEFAULT = 24

@@ -10,10 +10,7 @@ from xara import core
 from .. import utils as ut
 from ..datamodels import WindowCubeModel
 from .window_frames_plots import plot_window
-
-
-WRAD_DEFAULT = 24
-
+from ..constants import WRAD_DEFAULT
 
 class WindowFramesStep(Step):
     """
