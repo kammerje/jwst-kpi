@@ -81,19 +81,18 @@ class ExtractKerphaseStep(Step):
             raise ValueError("Unexpected previous_suffix attribute")
         data = input_models.data
         erro = input_models.err
-        # TODO: Fix pxdq
-        # pxdq = input_models.dq
-        pxdq = np.zeros_like(erro)
-        # TODO: Handle ORG/MOD
-        # try:
-        #     data_org = hdul["SCI-ORG"].data
-        #     erro_org = hdul["ERR-ORG"].data
-        # except Exception:
-        #     pass
-        # try:
-        #     pxdq_mod = hdul["DQ-MOD"].data
-        # except Exception:
-        #     pass
+        pxdq = input_models.dq
+        try:
+            data_org = input_models.data_org
+            erro_org = input_models.err_org
+            has_org = True
+        except Exception:
+            has_org = False
+        try:
+            pxdq_mod = input_models.dq_mod
+            has_mod = True
+        except Exception:
+            has_mod = False
         if data.ndim not in [2, 3]:
             raise UserWarning("Only implemented for 2D image/3D data cube")
         if data.ndim == 2:
@@ -101,15 +100,16 @@ class ExtractKerphaseStep(Step):
             data = data[np.newaxis]
             erro = erro[np.newaxis]
             pxdq = pxdq[np.newaxis]
-            # try:
-            #     data_org = data_org[np.newaxis]
-            #     erro_org = erro_org[np.newaxis]
-            # except Exception:
-            #     pass
-            # try:
-            #     pxdq_mod = pxdq_mod[np.newaxis]
-            # except Exception:
-            #     pass
+            # TODO: use has_org or zero arrays
+            try:
+                data_org = data_org[np.newaxis]
+                erro_org = erro_org[np.newaxis]
+            except NameError:
+                pass
+            try:
+                pxdq_mod = pxdq_mod[np.newaxis]
+            except NameError:
+                pass
         else:
             is2d = False
         nf, sy, sx = data.shape
@@ -221,22 +221,10 @@ class ExtractKerphaseStep(Step):
 
         # Recenter frames, window frames, and extract kernel phase.
         # TODO: Does this mean recentering is always done twice?
-        # TODO: Have single loop, do setup before with if statements of following:
-        # - data vs data_org
-        # - wrad from window_frames or None
-        # - centering algo and bmax values
-        # - recenter=True or False
-        # TODO: this is only for code to work. Probably yields wrong results when recenter is True
-        data_org = data.copy()
         if do_recenter or do_window:
             data_extract = data_org
         else:
             data_extract = data
-        # TODO: Update
-        # if "SCI-ORG" in hdul:
-        #     raise UserWarning(
-        #         "There is a SCI-ORG FITS file extension although both the recentering and the windowing steps were skipped"
-        #     )
         if do_recenter:
             dx = []  # pix
             dy = []  # pix
@@ -266,6 +254,8 @@ class ExtractKerphaseStep(Step):
         kpcov = []
         kpsig = []
         kpcor = []
+        # TODO: Should this use "erro_org" for consistency re. recenter and window?
+        # Or will baseline definition be "immune" to recenter?
         for i in range(nf):
             if (
                 good_frames is None
@@ -304,7 +294,7 @@ class ExtractKerphaseStep(Step):
         data_good = []
         erro_good = []
         pxdq_good = []
-        # data_org_good = []
+        data_org_good = []
         erro_org_good = []
         pxdq_mod_good = []
         for i in range(nf):
@@ -316,23 +306,19 @@ class ExtractKerphaseStep(Step):
                 data_good += [data[i]]
                 erro_good += [erro[i]]
                 pxdq_good += [pxdq[i]]
-                # TODO: Update
-                # try:
-                #     data_org_good += [data_org[i]]
-                #     erro_org_good += [erro_org[i]]
-                # except Exception:
-                #     pass
-                # try:
-                #     pxdq_mod_good += [pxdq_mod[i]]
-                # except Exception:
-                #     pass
+                if has_org:
+                    data_org_good += [data_org[i]]
+                    erro_org_good += [erro_org[i]]
+                if has_mod:
+                    pxdq_mod_good += [pxdq_mod[i]]
         data_good = np.array(data_good)
         erro_good = np.array(erro_good)
         pxdq_good = np.array(pxdq_good)
-        # data_org_good = np.array(data_org_good)
-        erro_org_good = np.array(erro_org_good)
-        pxdq_mod_good = np.array(pxdq_mod_good)
-        # TODO: Kpfits model for output and udpate with input
+        if has_org:
+            data_org_good = np.array(data_org_good)
+            erro_org_good = np.array(erro_org_good)
+        if has_mod:
+            pxdq_mod_good = np.array(pxdq_mod_good)
         output_models = KPFitsModel()
         output_models.update(input_models, extra_fits=True)
         output_models.data = data_good[:, np.newaxis, :, :]
@@ -340,15 +326,11 @@ class ExtractKerphaseStep(Step):
         output_models.dq = pxdq_good[:, np.newaxis, :, :]
         # TODO: Update ORG and MOD
         # TODO: Simpler handling of repeated try/except's?
-        # try:
-        #     output_models.data_org = data_org_good[:, np.newaxis, :, :]
-        #     output_models.err_org = erro_org_good[:, np.newaxis, :, :]
-        # except AttributeError:
-        #     pass
-        try:
+        if has_org:
+            output_models.data_org = data_org_good[:, np.newaxis, :, :]
+            output_models.err_org = erro_org_good[:, np.newaxis, :, :]
+        if has_mod:
             output_models.dq_mod = pxdq_mod_good[:, np.newaxis, :, :]
-        except Exception:
-            pass
         output_models.meta.kpi_extract.pscale = PSCALE
         # TODO: Handle gain_kwd earlier and then use this to get without if/else
         if INSTRUME == "NIRCAM":
