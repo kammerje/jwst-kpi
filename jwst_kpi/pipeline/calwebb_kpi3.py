@@ -114,6 +114,13 @@ class Kpi3Pipeline(Pipeline):
 
         input = self.empirical_uncertainties(input)
 
+        if not self.empirical_uncertainties.skip:
+            self.suffix = "emp_kpfits"
+        elif not self.extract_kerphase.skip:
+            self.suffix = "kpfits"
+        else:
+            self.suffix = "calints_kpi"
+
         return input
 
     def remove_suffix(self, name):
