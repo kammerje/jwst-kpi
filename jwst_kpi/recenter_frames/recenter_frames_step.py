@@ -264,7 +264,6 @@ class RecenterFramesStep(Step):
         output_models.err = erro_recentered
         output_models.data_org = data
         output_models.err_org = erro
-        # TODO: This might not work, maybe need to create full imshift rec array first?
         if is2d:
             dx_arr = np.array([dx])  # pix
             dy_arr = np.array([dy])  # pix
@@ -280,7 +279,6 @@ class RecenterFramesStep(Step):
         return output_models
 
     def remove_suffix(self, name):
-        # TODO: This will be repeated between all steps. If too many things like this, do parent "kpistage3step"
         new_name, separator = super(RecenterFramesStep, self).remove_suffix(name)
         if new_name == name:
             new_name, separator = ut.remove_suffix_kpi(new_name)

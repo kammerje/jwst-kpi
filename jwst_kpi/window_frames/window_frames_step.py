@@ -62,7 +62,6 @@ class WindowFramesStep(Step):
             input_models = datamodels.open(input_data)
         else:
             raise ValueError("Unexpected previous_suffix attribute")
-        # TODO: make dq follow?
         data = input_models.data
         erro = input_models.err
         if data.ndim not in [2, 3]:

@@ -60,10 +60,6 @@ class FixBadPixelsStep(Step):
         good_frames = self.good_frames
 
         # Open file.
-        # TODO: Make a version that uses proper input KPI models
-        # and passes fits keyword: will require a "core KPI" schema with all
-        # new fits keywords. For now "extra_fits" works fine
-        # TODO: If use "previous_suffix", can guess model type directly
         if self.previous_suffix is None:
             input_models = datamodels.open(input_data)
         else:
@@ -154,10 +150,6 @@ class FixBadPixelsStep(Step):
             plt.close()
 
         # Save file.
-        # TODO: Mark step completed
-        # TODO: How add keywords in pipeline?
-        # TODO: Add mask ext
-        # TODO: Might want to just save this direclty here instead of using default saving mech
         output_models = BadPixCubeModel()
         output_models.update(input_models, extra_fits=True)
         if is2d:
@@ -177,7 +169,6 @@ class FixBadPixelsStep(Step):
         return output_models
 
     def remove_suffix(self, name):
-        # TODO: This will be repeated between all steps. If too many things like this, do parent "kpistage3step"
         new_name, separator = super(FixBadPixelsStep, self).remove_suffix(name)
         if new_name == name:
             new_name, separator = ut.remove_suffix_kpi(new_name)

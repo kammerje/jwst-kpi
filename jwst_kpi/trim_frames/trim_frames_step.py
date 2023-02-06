@@ -5,7 +5,7 @@ from scipy.ndimage import median_filter
 from jwst.stpipe import Step
 from jwst import datamodels
 
-# from .. import utils as ut
+from .. import utils as ut
 from ..datamodels import TrimmedCubeModel
 from .trim_frames_plots import plot_trim
 
@@ -54,7 +54,6 @@ class TrimFramesStep(Step):
         good_frames = self.good_frames
 
         # Open file. Use default pipeline way unless "previous suffix is used"
-        # TODO: Mention this in PR
         if self.previous_suffix is None:
             input_models = datamodels.open(input_data)
         else:
@@ -154,7 +153,7 @@ class TrimFramesStep(Step):
                 ww_max[1] - self.trim_halfsize : ww_max[1] + self.trim_halfsize,
             ].copy()
 
-        # TODO: This is duplicated in all methods
+        # NOTE: This is duplicated in all methods
         mk_path = self.make_output_path()
         stem = os.path.splitext(mk_path)[0]
 
@@ -167,15 +166,10 @@ class TrimFramesStep(Step):
             plt.close()
 
         # Save file.
-        # TODO: Mark step completed
-        # TODO: How add keywords in pipeline?
-        # TODO: Might want to just save this direclty here instead of using default saving mech
-        # One option would be to save, them read + update... Not optimal
         if is2d:
             data_trimmed = data_trimmed[0]
             erro_trimmed = erro_trimmed[0]
             pxdq_trimmed = pxdq_trimmed[0]
-        # TODO: Output model should be a trimmed cube
         output_models = TrimmedCubeModel()
         output_models.update(input_models)
         output_models.data = data_trimmed
@@ -188,9 +182,7 @@ class TrimFramesStep(Step):
 
         return output_models
 
-
     def remove_suffix(self, name):
-        # TODO: This will be repeated between all steps. If too many things like this, do parent "kpistage3step"
         new_name, separator = super(TrimFramesStep, self).remove_suffix(name)
         if new_name == name:
             new_name, separator = ut.remove_suffix_kpi(new_name)

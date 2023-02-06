@@ -150,7 +150,7 @@ class ExtractKerphaseStep(Step):
         if FILTER not in filter_allowed:
             raise UserWarning("Unknown filter")
 
-        # TODO: Up code lasts until this block
+        # TODO: Dup code lasts until this block
         # Get pupil model path and filter properties.
         pupil_name = input_models.meta.instrument.pupil
         if INSTRUME == "NIRCAM":
@@ -329,7 +329,6 @@ class ExtractKerphaseStep(Step):
         kpsig = np.array(kpsig)
         kpcor = np.array(kpcor)
 
-        # TODO: Test and cleanup
         # Get output file path.
         # path = ut.get_output_base(file, output_dir=output_dir)
         mk_path = self.make_output_path()
@@ -345,7 +344,6 @@ class ExtractKerphaseStep(Step):
 
         # Save file.
         # TODO: Move creation of KPFITS to separate function
-        # TODO: JWST data model?
         data_good = []
         erro_good = []
         pxdq_good = []
@@ -420,7 +418,6 @@ class ExtractKerphaseStep(Step):
         output_models.meta.calflag = False
         output_models.meta.content = "KPFITS1"
         # Aperture coordinates
-        # TODO: Can transfer ttypes with datamodels/schemas?
         # TODO: Check this shape
         output_models.aperture = np.recarray(KPO.kpi.VAC.shape[0], output_models.aperture.dtype)
         output_models.aperture["XXC"] = KPO.kpi.VAC[:, 0]  # m
