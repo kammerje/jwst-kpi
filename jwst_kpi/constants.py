@@ -1,3 +1,6 @@
+"""
+Constants used throughout KPI pipeline
+"""
 from astroquery.svo_fps import SvoFps
 
 # Detector pixel scales.

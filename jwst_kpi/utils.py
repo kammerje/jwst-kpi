@@ -85,6 +85,18 @@ def get_output_base(
 
 
 def remove_suffix_kpi(name):
+    """
+    Remove suffix from any KPI step output
+
+    Remove suffix from JWST KPI Pipeline file. This function was made to
+    catch suffixes from KPI pipeline steps, which are not recognized by main
+    JWST pipeline.
+
+    Parameters
+    ----------
+    name : str
+        File name from which suffix should be removed
+    """
     separator = None
     match = REMOVE_SUFFIX_REGEX_KPI.match(name)
     try:
