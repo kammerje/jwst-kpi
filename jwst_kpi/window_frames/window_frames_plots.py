@@ -1,9 +1,21 @@
-import matplotlib.pyplot as plt
 import matplotlib.patheffects as PathEffects
+import matplotlib.pyplot as plt
 import numpy as np
 
 
 def plot_window(data_windowed, wrad, good_frames=None):
+    """
+    Plot windowed data
+
+    Parameters
+    ----------
+    data_windowed : np.ndarray
+        Windowed data
+    wrad : int
+        Windowing radius for supergaussian
+    good_frames : List[int]
+        List of good frames, bad frames will be skipped.
+    """
     plt.ioff()
     _, sy, sx = data_windowed.shape
     f, ax = plt.subplots(1, 2, figsize=(1.50 * 6.4, 0.75 * 4.8))
@@ -30,9 +42,7 @@ def plot_window(data_windowed, wrad, good_frames=None):
         transform=ax[0].transAxes,
         size=12,
     )
-    t0.set_path_effects(
-        [PathEffects.withStroke(linewidth=3, foreground="black")]
-    )
+    t0.set_path_effects([PathEffects.withStroke(linewidth=3, foreground="black")])
     ax[0].set_title(
         "Windowed frame",
         y=1.0,
@@ -64,9 +74,7 @@ def plot_window(data_windowed, wrad, good_frames=None):
         transform=ax[1].transAxes,
         size=12,
     )
-    t1.set_path_effects(
-        [PathEffects.withStroke(linewidth=3, foreground="black")]
-    )
+    t1.set_path_effects([PathEffects.withStroke(linewidth=3, foreground="black")])
     ax[1].set_title(
         "Windowed frame (log)",
         y=1.0,

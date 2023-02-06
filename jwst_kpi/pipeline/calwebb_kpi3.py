@@ -12,13 +12,13 @@ from jwst import datamodels
 from jwst.stpipe import Pipeline
 
 from .. import pupil_data
+from .. import utils as ut
 from ..empirical_uncertainties import empirical_uncertainties_step
 from ..extract_kerphase import extract_kerphase_step
 from ..fix_bad_pixels import fix_bad_pixels_step
 from ..recenter_frames import recenter_frames_step
 from ..trim_frames import trim_frames_step
 from ..window_frames import window_frames_step
-from .. import utils as ut
 
 matplotlib.rcParams.update({"font.size": 14})
 
@@ -40,6 +40,17 @@ class Kpi3Pipeline(Pipeline):
               pipelines. It is recommended to also skip these steps for kernel
               phase imaging (i.e. when generating calints that will be passed
               to this pipeline).
+
+    Parameters
+    -----------
+    input_data :  ~jwst_kpi.datamodels.KPFitsModel
+        Single filename for extracted kernel phase data
+    plot : bool
+        Generate plots
+    show_plots : bool
+        Show plots
+    good_frames : List[int]
+        List of good frames, bad frames will be skipped.
     """
 
     class_alias = "calwebb_kpi3"
@@ -47,6 +58,7 @@ class Kpi3Pipeline(Pipeline):
     spec = """
         output_dir = string(default=None)
         show_plots = boolean(default=False)
+        plot = boolean(default=True)
         good_frames = int_list(default=None)
     """
 
@@ -60,18 +72,7 @@ class Kpi3Pipeline(Pipeline):
     }
 
     # NOTE: `run` will now call this directly because subclass Pipeline
-    def process(
-        self,
-        input_data,
-    ):
-        """
-        Run the pipeline.
-
-        Parameters
-        ----------
-        file: str
-            Path to stage 2-calibrated pipeline product.
-        """
+    def process(self, input_data):
 
         log.info("Starting calwebb_kpi3")
 
@@ -80,10 +81,11 @@ class Kpi3Pipeline(Pipeline):
             if not os.path.exists(self.output_dir):
                 os.makedirs(self.output_dir)
 
-        # Propagate show_plots, output_dir, good_frames
+        # Propagate plot, show_plots, output_dir, good_frames
         for step_name in self.step_defs:
             step = getattr(self, step_name)
             step.show_plots = self.show_plots
+            step.plot = self.plot
             step.output_dir = self.output_dir
             if hasattr(step, "good_frames"):
                 step.good_frames = self.good_frames

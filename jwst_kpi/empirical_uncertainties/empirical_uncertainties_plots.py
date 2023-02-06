@@ -4,6 +4,24 @@ import numpy as np
 
 
 def plot_emp_uncertainties(emcor, emcor_sample, kpdat, wmdat, wmsig=None, emsig=None):
+    """
+    Plot empirical uncertainties
+
+    Parameters
+    ----------
+    emcor : np.ndarray
+        Empirical correlation
+    emcor_sample : np.ndarray
+        Empirical correlation from samples
+    kpdat : np.ndarray
+        Kernel Phase Data
+    wmdat : np.ndarray
+        Weighted mean Data
+    wmsig : np.ndarray
+        Weighted mean errors
+    emsig : np.dnarray
+        Empirical errors
+    """
     plt.ioff()
     nkp = kpdat.shape[2]
     colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]

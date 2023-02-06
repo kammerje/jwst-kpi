@@ -1,9 +1,10 @@
+import os
+
 import matplotlib.pyplot as plt
 import numpy as np
-import os
-from scipy.ndimage import median_filter
-from jwst.stpipe import Step
 from jwst import datamodels
+from jwst.stpipe import Step
+from scipy.ndimage import median_filter
 
 from .. import utils as ut
 from ..datamodels import TrimmedCubeModel
@@ -13,15 +14,23 @@ from .trim_frames_plots import plot_trim
 class TrimFramesStep(Step):
     """
     Trim frames.
-    suffix: str
-        Suffix for the file path to find the product from the previous
-        step.
-    output_dir: str
-        Output directory, if None uses same directory as input file.
-    show_plots: bool
-        Show plots?
-    good_frames: list of int
+
+    Parameters
+    -----------
+    input_data :  ~jwst_kpi.datamodels.KPFitsModel
+        Single filename for extracted kernel phase data
+    plot : bool
+        Generate plots
+    show_plots : bool
+        Show plots
+    previous_suffix : Optional[str]
+        Suffix of previous file. DEPRECATED: use ~input_data directly instead
+    good_frames : List[int]
         List of good frames, bad frames will be skipped.
+    trim_cent : List[int]
+        Center around which to trim (X and Y coordinates, list of length 2)
+    trim_halfsize: int
+        Half-size of trimmed image (default 32).
     """
 
     class_alias = "trim_frames"
@@ -36,18 +45,7 @@ class TrimFramesStep(Step):
         good_frames = int_list(default=None)
     """
 
-    def process(
-        self,
-        input_data,
-    ):
-        """
-        Run the pipeline step.
-
-        Parameters
-        ----------
-        file: str
-            Path to stage 2-calibrated pipeline product.
-        """
+    def process(self, input_data):
 
         self.log.info("--> Running trim frames step...")
 
@@ -58,10 +56,6 @@ class TrimFramesStep(Step):
             input_models = datamodels.open(input_data)
         else:
             raise ValueError("Unexpected previous_suffix attribute")
-        # elif self.previous_suffix == "":
-        #     hdul = ut.open_fits(input_data, suffix=self.previous_suffix, file_dir=None)
-        # else:
-        #     hdul = ut.open_fits(input_data, suffix=self.previous_suffix, file_dir=self.output_dir)
         data = input_models.data
         erro = input_models.err
         pxdq = input_models.dq
@@ -159,7 +153,15 @@ class TrimFramesStep(Step):
 
         # Plot.
         if self.plot:
-            plot_trim(data, data_trimmed, pxdq, pxdq_trimmed, ww_max, self.trim_halfsize, good_frames=good_frames)
+            plot_trim(
+                data,
+                data_trimmed,
+                pxdq,
+                pxdq_trimmed,
+                ww_max,
+                self.trim_halfsize,
+                good_frames=good_frames,
+            )
             plt.savefig(stem + ".pdf")
             if self.show_plots:
                 plt.show()

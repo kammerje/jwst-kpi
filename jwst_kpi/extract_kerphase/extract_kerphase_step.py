@@ -2,7 +2,6 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
-# from astropy.io import fits
 from jwst import datamodels
 from jwst.stpipe import Step
 from xara import core, kpo
@@ -25,6 +24,38 @@ class ExtractKerphaseStep(Step):
     Steph Sallum's masking & kernel phase hackathon in 2021 and is defined
     here:
         https://ui.adsabs.harvard.edu/abs/2022arXiv221017528K/abstract
+
+    Parameters
+    -----------
+    input_data :  ~jwst_kpi.datamodels.KPFitsModel
+        Single filename for extracted kernel phase data
+    plot : bool
+        Generate plots
+    show_plots : bool
+        Show plots
+    previous_suffix : Optional[str]
+        Suffix of previous file. DEPRECATED: use ~input_data directly instead
+    good_frames : List[int]
+        List of good frames, bad frames will be skipped.
+    instrume_allowed : List[str]
+        Instruments allowed by the pipeline
+        (default ['NIRCAM', 'NIRISS', 'MIRI'] should not be changed by users)
+    bmax : Optional[float]
+        Maximum baseline to consider in extraction (defaults to None)
+    recenter_method : Optional[str]
+        Recentering method to be used (defaults to None, for no recentering)
+    recenter_bmax : float
+        Maximum baseline to consider when recentering (in m, defaults to 6.0)
+    recenter_method_allowed : Optional[List[str]]
+        Recentering methods allowed
+        (defaults to None, should be inherited from recenter step)
+    wrad : Optional[int]
+        Windowing radius to use for super-gaussian
+        (defaults to None, should be inherited from windowing step)
+    pupil_path : Optional[str]
+        Optional path to custom pupil model
+    verbose : bool
+        Enable verbose mode
     """
 
     class_alias = "extract_kerphase"
@@ -44,31 +75,7 @@ class ExtractKerphaseStep(Step):
         good_frames = int_list(default=None)
     """
 
-    def process(
-        self,
-        input_data,
-    ):
-        """
-        Run the pipeline step.
-
-        Parameters
-        ----------
-        file: str
-            Path to stage 2-calibrated pipeline product.
-        suffix: str
-            Suffix for the file path to find the product from the previous
-            step.
-        recenter_frames_obj: obj
-            Object of recenter_frames class.
-        window_frames_obj: obj
-            Object of window_frames class.
-        output_dir: str
-            Output directory, if None uses same directory as input file.
-        show_plots: bool
-            Show plots?
-        good_frames: list of int
-            List of good frames, bad frames will be skipped.
-        """
+    def process(self, input_data):
 
         self.log.info("--> Running extract kerphase step...")
 
@@ -391,7 +398,6 @@ class ExtractKerphaseStep(Step):
         output_models.cwavel = np.recarray(wave_arr.shape, output_models.cwavel.dtype)
         output_models.cwavel["CWAVEL"] = wave_arr  # m
         output_models.cwavel["BWIDTH"] = np.array([weff])  # m
-        # TODO: 1 or 2 dimensions?
         output_models.detpa = np.array(
             [output_models.meta.wcsinfo.roll_ref + V3I_YANG] * data_good.shape[0]
         )  # deg

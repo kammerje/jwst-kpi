@@ -2,15 +2,14 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
-# from astropy.io import fits
-from jwst.stpipe import Step
 from jwst import datamodels
+from jwst.datamodels.dqflags import pixel as pxdq_flags
+from jwst.stpipe import Step
 from scipy.ndimage import median_filter
 
 from .. import utils as ut
 from ..datamodels import BadPixCubeModel
 from .fix_bad_pixels_plots import plot_badpix
-from jwst.datamodels.dqflags import pixel as pxdq_flags
 
 
 class FixBadPixelsStep(Step):
@@ -20,6 +19,29 @@ class FixBadPixelsStep(Step):
     ..Notes:: References for the Fourier method:
               https://ui.adsabs.harvard.edu/abs/2019MNRAS.486..639K/abstract
               https://ui.adsabs.harvard.edu/abs/2013MNRAS.433.1718I/abstract
+
+    Parameters
+    -----------
+    input_data :  ~jwst_kpi.datamodels.KPFitsModel
+        Single filename for extracted kernel phase data
+    plot : bool
+        Generate plots
+    show_plots : bool
+        Show plots
+    previous_suffix : Optional[str]
+        Suffix of previous file. DEPRECATED: use ~input_data directly instead
+    good_frames : List[int]
+        List of good frames, bad frames will be skipped.
+    method : str
+        Method used to correct bad pixels
+    bad_bits : List[str]
+        Bad pixel codes to consider as bad when correcting image
+    method_allowed : List[str]
+        Bad pixel correction methods allowed.
+        Default ['medfilt', 'fourier'] should not be changed by users.
+    bad_bits_allowed : Optional[List[str]]
+        List of values allowed for "bad_bits" attribute.
+        Default list imported from JWST pipeline.
     """
 
     class_alias = "fix_bad_pixels"
@@ -35,24 +57,7 @@ class FixBadPixelsStep(Step):
         good_frames = int_list(default=None)
     """
 
-    def process(
-        self,
-        input_data,
-    ):
-        """
-        Run the pipeline step.
-
-        Parameters
-        ----------
-        file: str
-            Path to stage 2-calibrated pipeline product.
-        output_dir: str
-            Output directory, if None uses same directory as input file.
-        show_plots: bool
-            Show plots?
-        good_frames: list of int
-            List of good frames, bad frames will be skipped.
-        """
+    def process(self, input_data):
 
         self.log.info("--> Running fix bad pixels step...")
 

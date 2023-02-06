@@ -2,20 +2,34 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
-# from astropy.io import fits
 from jwst import datamodels
 from jwst.stpipe import Step
 from xara import core
 
 from .. import utils as ut
+from ..constants import WRAD_DEFAULT
 from ..datamodels import WindowCubeModel
 from .window_frames_plots import plot_window
-from ..constants import WRAD_DEFAULT
 
 
 class WindowFramesStep(Step):
     """
     Window frames.
+
+    Parameters
+    -----------
+    input_data :  ~jwst_kpi.datamodels.KPFitsModel
+        Single filename for extracted kernel phase data
+    plot : bool
+        Generate plots
+    show_plots : bool
+        Show plots
+    previous_suffix : Optional[str]
+        Suffix of previous file. DEPRECATED: use ~input_data directly instead
+    good_frames : List[int]
+        List of good frames, bad frames will be skipped.
+    wrad : int
+        Windowing radius to use for super-gaussian (default constants.WRAD_DEFAULT=24).
     """
 
     class_alias = "window_frames"
@@ -29,27 +43,7 @@ class WindowFramesStep(Step):
         good_frames = int_list(default=None)
     """
 
-    def process(
-        self,
-        input_data,
-    ):
-        """
-        Run the pipeline step.
-
-        Parameters
-        ----------
-        file: str
-            Path to stage 2-calibrated pipeline product.
-        suffix: str
-            Suffix for the file path to find the product from the previous
-            step.
-        output_dir: str
-            Output directory, if None uses same directory as input file.
-        show_plots: bool
-            Show plots?
-        good_frames: list of int
-            List of good frames, bad frames will be skipped.
-        """
+    def process(self, input_data):
 
         self.log.info("--> Running window frames step...")
 
@@ -87,7 +81,9 @@ class WindowFramesStep(Step):
 
         # Window.
         if self.wrad is None:
-            self.log.warning(f"wrad was set to None. Using default value of {WRAD_DEFAULT}")
+            self.log.warning(
+                f"wrad was set to None. Using default value of {WRAD_DEFAULT}"
+            )
             self.wrad = WRAD_DEFAULT
 
         self.log.info(

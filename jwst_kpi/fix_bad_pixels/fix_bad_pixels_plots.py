@@ -1,9 +1,27 @@
-import matplotlib.pyplot as plt
 import matplotlib.patheffects as PathEffects
+import matplotlib.pyplot as plt
 import numpy as np
 
 
 def plot_badpix(data, data_bpfixed, bad_bits, mask, good_frames, method="medfilt"):
+    """
+    Plot bad pixel correction
+
+    Parameters
+    ----------
+    data : np.ndarray
+        Data to be corrected
+    data_bpfixed : np.ndarray
+        Corrected data
+    bad_bits : List[str]
+        Bad pixel codes used
+    mask : np.ndarray
+        Mask showing bad pixel positions
+    good_frames : List[int]
+        List of good frames, bad frames will be skipped.
+    method : str
+        Method used to correct bad pixels
+    """
     plt.ioff()
     f, ax = plt.subplots(1, 3, figsize=(2.25 * 6.4, 0.75 * 4.8))
     if good_frames is None:
@@ -21,9 +39,7 @@ def plot_badpix(data, data_bpfixed, bad_bits, mask, good_frames, method="medfilt
         transform=ax[0].transAxes,
         size=12,
     )
-    t0.set_path_effects(
-        [PathEffects.withStroke(linewidth=3, foreground="black")]
-    )
+    t0.set_path_effects([PathEffects.withStroke(linewidth=3, foreground="black")])
     ax[0].set_title(
         "Bad pixel map",
         y=1.0,
@@ -33,9 +49,7 @@ def plot_badpix(data, data_bpfixed, bad_bits, mask, good_frames, method="medfilt
     if good_frames is None:
         p1 = ax[1].imshow(np.log10(np.abs(data[0])), origin="lower")
     else:
-        p1 = ax[1].imshow(
-            np.log10(np.abs(data[good_frames[0]])), origin="lower"
-        )
+        p1 = ax[1].imshow(np.log10(np.abs(data[good_frames[0]])), origin="lower")
     plt.colorbar(p1, ax=ax[1])
     ax[1].set_title(
         "Frame (log)",
@@ -60,9 +74,7 @@ def plot_badpix(data, data_bpfixed, bad_bits, mask, good_frames, method="medfilt
         transform=ax[2].transAxes,
         size=12,
     )
-    t2.set_path_effects(
-        [PathEffects.withStroke(linewidth=3, foreground="black")]
-    )
+    t2.set_path_effects([PathEffects.withStroke(linewidth=3, foreground="black")])
     ax[2].set_title(
         "Fixed frame (log)",
         y=1.0,

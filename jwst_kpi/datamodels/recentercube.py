@@ -21,4 +21,5 @@ class RecenterCubeModel(CubeModel):
     imshift : numpy float64 table
         Table of shifts used to recenter image
     """
+
     schema_url = "http://stsci.edu/schemas/jwst_kpi_datamodel/recentercube.schema"

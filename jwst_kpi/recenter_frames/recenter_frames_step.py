@@ -20,6 +20,34 @@ PUPIL_DIR = pupil_data.__path__[0]
 class RecenterFramesStep(Step):
     """
     Recenter frames.
+
+    Parameters
+    -----------
+    input_data :  ~jwst_kpi.datamodels.KPFitsModel
+        Single filename for extracted kernel phase data
+
+    plot : bool
+        Generate plots
+    show_plots : bool
+        Show plots
+    previous_suffix : Optional[str]
+        Suffix of previous file. DEPRECATED: use ~input_data directly instead
+    good_frames : List[int]
+        List of good frames, bad frames will be skipped.
+    method : str
+        Recentering method to be used (defaults to FPNM)
+    recenter_method_allowed : List[str]
+        Recentering methods allowed.
+        Default ['BCEN', 'COGI', 'FPNM'] should not be modified by users.
+    instrume_allowed : List[str]
+        Instruments allowed by the pipeline
+        (default ['NIRCAM', 'NIRISS', 'MIRI'] should not be changed by users)
+    bmax : float
+        Maximum baseline to consider when recentering (in m, defaults to 6.0)
+    pupil_path : Optional[str]
+        Optional path to custom pupil model
+    verbose : bool
+        Enable verbose mode
     """
 
     class_alias = "recenter_frames"
@@ -37,27 +65,7 @@ class RecenterFramesStep(Step):
         good_frames = int_list(default=None)
     """
 
-    def process(
-        self,
-        input_data,
-    ):
-        """
-        Run the pipeline step.
-
-        Parameters
-        ----------
-        file: str
-            Path to stage 2-calibrated pipeline product.
-        suffix: str
-            Suffix for the file path to find the product from the previous
-            step.
-        output_dir: str
-            Output directory, if None uses same directory as input file.
-        show_plots: bool
-            Show plots?
-        good_frames: list of int
-            List of good frames, bad frames will be skipped.
-        """
+    def process(self, input_data):
 
         self.log.info("--> Running recenter frames step...")
 

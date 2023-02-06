@@ -12,6 +12,21 @@ from .empirical_uncertainties_plots import plot_emp_uncertainties
 class EmpiricalUncertaintiesStep(Step):
     """
     Compute empirical uncertainties for the kernel phase.
+
+    Parameters
+    -----------
+    input_data :  ~jwst_kpi.datamodels.KPFitsModel
+        Single filename for extracted kernel phase data
+    plot : bool
+        Generate plots
+    show_plots : bool
+        Show plots
+    previous_suffix : Optional[str]
+        Suffix of previous file. DEPRECATED: use ~input_data directly instead
+    get_emp_err : bool
+        Get empirical error
+    get_emp_cor : bool
+        Get empirical correlation
     """
 
     class_alias = "empirical_uncertainties"
@@ -24,30 +39,11 @@ class EmpiricalUncertaintiesStep(Step):
         get_emp_cor = boolean(default=False)
     """
 
-    def process(
-        self,
-        input_data,
-    ):
-        """
-        Run the pipeline step.
-
-        Parameters
-        ----------
-        file: str
-            Path to stage 2-calibrated pipeline product.
-        suffix: str
-            Suffix for the file path to find the product from the previous
-            step.
-        output_dir: str
-            Output directory, if None uses same directory as input file.
-        show_plots: bool
-            Show plots?
-        """
+    def process(self, input_data):
 
         self.log.info("--> Running empirical uncertainties step...")
 
         # Open file.
-        # TODO: Could use "open" if it can figure out datamodels
         if self.previous_suffix is None:
             input_models = KPFitsModel(input_data)
         else:
@@ -143,7 +139,9 @@ class EmpiricalUncertaintiesStep(Step):
         return output_models
 
     def remove_suffix(self, name):
-        new_name, separator = super(EmpiricalUncertaintiesStep, self).remove_suffix(name)
+        new_name, separator = super(EmpiricalUncertaintiesStep, self).remove_suffix(
+            name
+        )
         if new_name == name:
             new_name, separator = ut.remove_suffix_kpi(new_name)
         return new_name, separator

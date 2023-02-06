@@ -1,8 +1,24 @@
-import matplotlib.pyplot as plt
 import matplotlib.patheffects as PathEffects
+import matplotlib.pyplot as plt
 
 
 def plot_recenter(data, data_recentered, dx, dy, good_frames=None):
+    """
+    Plot recentering.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        Original data
+    data_recentered : np.ndarray
+        Recentered data
+    dx : np.ndarray
+        X offsets (per frame)
+    dy : np.ndarray
+        Y offsets (per frame)
+    good_frames : List[int]
+        List of good frames, bad frames will be skipped.
+    """
     plt.ioff()
     _, sy, sx = data.shape
     f, ax = plt.subplots(1, 2, figsize=(1.50 * 6.4, 0.75 * 4.8))
@@ -38,9 +54,7 @@ def plot_recenter(data, data_recentered, dx, dy, good_frames=None):
             transform=ax[0].transAxes,
             size=12,
         )
-    t0.set_path_effects(
-        [PathEffects.withStroke(linewidth=3, foreground="black")]
-    )
+    t0.set_path_effects([PathEffects.withStroke(linewidth=3, foreground="black")])
     ax[0].set_title(
         "Frame",
         y=1.0,
@@ -64,9 +78,7 @@ def plot_recenter(data, data_recentered, dx, dy, good_frames=None):
         transform=ax[1].transAxes,
         size=12,
     )
-    t1.set_path_effects(
-        [PathEffects.withStroke(linewidth=3, foreground="black")]
-    )
+    t1.set_path_effects([PathEffects.withStroke(linewidth=3, foreground="black")])
     ax[1].set_title(
         "Recentered frame",
         y=1.0,

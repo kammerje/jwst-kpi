@@ -3,6 +3,24 @@ import matplotlib.pyplot as plt
 
 
 def plot_kerphase(data, KPO, m2pix, kpcor, kpsig, good_frames=None):
+    """
+    Plot kernel phases
+
+    Parameters
+    ----------
+    data : np.ndarray
+        Input image data
+    KPO : xara.kpo.KPO
+        Xara KPO object
+    m2pix : float
+        meter to pixel conversion factor
+    kpcor : np.ndarray
+        Kernel phase correlations
+    kpsig : np.ndarray
+        Kernel phase errors
+    good_frames : List[int]
+        List of good frame indices to keep
+    """
     plt.ioff()
     _, sy, sx = data.shape
     colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]

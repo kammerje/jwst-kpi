@@ -1,18 +1,38 @@
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.patches import Rectangle
 import matplotlib.patheffects as PathEffects
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.patches import Rectangle
 
 
-def plot_trim(data, data_trimmed, pxdq, pxdq_trimmed, ww_max, trim_halfsize, good_frames=None):
+def plot_trim(
+    data, data_trimmed, pxdq, pxdq_trimmed, ww_max, trim_halfsize, good_frames=None
+):
+    """
+    Plot trimmed data
+
+    Parameters
+    ----------
+    data : np.ndarray
+        Original data
+    data_trimmed : np.ndarray
+        Trimmed data
+    pxdq : np.ndarray
+        Original DQ map
+    pxdq_trimmed : np.ndarray
+        Trimmed DQ array
+    ww_max : List[float]
+        Max/central point
+    trim_halfsize : int
+        Half-size of trimmed data
+    good_frames : Optional[List[int]]
+        List of good frames, bad frames will be skipped.
+    """
     plt.ioff()
     f, ax = plt.subplots(2, 2, figsize=(1.50 * 6.4, 1.50 * 4.8))
     if good_frames is None:
         p00 = ax[0, 0].imshow(np.log10(np.abs(data[0])), origin="lower")
     else:
-        p00 = ax[0, 0].imshow(
-            np.log10(np.abs(data[good_frames[0]])), origin="lower"
-        )
+        p00 = ax[0, 0].imshow(np.log10(np.abs(data[good_frames[0]])), origin="lower")
     plt.colorbar(p00, ax=ax[0, 0])
     r00 = Rectangle(
         (
@@ -35,9 +55,7 @@ def plot_trim(data, data_trimmed, pxdq, pxdq_trimmed, ww_max, trim_halfsize, goo
         transform=ax[0, 0].transAxes,
         size=12,
     )
-    t00.set_path_effects(
-        [PathEffects.withStroke(linewidth=3, foreground="black")]
-    )
+    t00.set_path_effects([PathEffects.withStroke(linewidth=3, foreground="black")])
     ax[0, 0].set_title(
         "Full frame (log)",
         y=1.0,
@@ -70,9 +88,7 @@ def plot_trim(data, data_trimmed, pxdq, pxdq_trimmed, ww_max, trim_halfsize, goo
         transform=ax[0, 1].transAxes,
         size=12,
     )
-    t01.set_path_effects(
-        [PathEffects.withStroke(linewidth=3, foreground="black")]
-    )
+    t01.set_path_effects([PathEffects.withStroke(linewidth=3, foreground="black")])
     ax[0, 1].set_title(
         "Bad pixel map",
         y=1.0,
@@ -96,9 +112,7 @@ def plot_trim(data, data_trimmed, pxdq, pxdq_trimmed, ww_max, trim_halfsize, goo
         transform=ax[1, 0].transAxes,
         size=12,
     )
-    t10.set_path_effects(
-        [PathEffects.withStroke(linewidth=3, foreground="black")]
-    )
+    t10.set_path_effects([PathEffects.withStroke(linewidth=3, foreground="black")])
     ax[1, 0].set_title(
         "Trimmed frame (log)",
         y=1.0,
@@ -108,9 +122,7 @@ def plot_trim(data, data_trimmed, pxdq, pxdq_trimmed, ww_max, trim_halfsize, goo
     if good_frames is None:
         p11 = ax[1, 1].imshow(pxdq_trimmed[0] & 1 == 1, origin="lower")
     else:
-        p11 = ax[1, 1].imshow(
-            pxdq_trimmed[good_frames[0]] & 1 == 1, origin="lower"
-        )
+        p11 = ax[1, 1].imshow(pxdq_trimmed[good_frames[0]] & 1 == 1, origin="lower")
     plt.colorbar(p11, ax=ax[1, 1])
     t11 = ax[1, 1].text(
         0.01,
@@ -122,9 +134,7 @@ def plot_trim(data, data_trimmed, pxdq, pxdq_trimmed, ww_max, trim_halfsize, goo
         transform=ax[1, 1].transAxes,
         size=12,
     )
-    t11.set_path_effects(
-        [PathEffects.withStroke(linewidth=3, foreground="black")]
-    )
+    t11.set_path_effects([PathEffects.withStroke(linewidth=3, foreground="black")])
     ax[1, 1].set_title(
         "Trimmed bad pixel map",
         y=1.0,
