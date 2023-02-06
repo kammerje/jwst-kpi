@@ -9,14 +9,12 @@ properties:
     properties:
       cent_x:
         title: Centroid in original image along X axis
-        # TODO: Number, float32, float64??
         type: number
         fits_keyword: CENT_X
         # NOTE: Putting in primary for now instead of repeating in all extensions
         # fits_hdu: SCI
       cent_y:
         title: Centroid in original image along Y axis
-        # TODO: Number, float32, float64??
         type: number
         fits_keyword: CENT_Y
         # NOTE: Putting in primary for now instead of repeating in all extensions
