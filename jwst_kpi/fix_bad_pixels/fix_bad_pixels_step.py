@@ -8,7 +8,7 @@ from jwst.stpipe import Step
 from scipy.ndimage import median_filter
 
 from .. import utils as ut
-from ..datamodels import BadPixCubeModel
+from ..datamodels import BadPixCubeModel, BadPixImageModel
 from .fix_bad_pixels_plots import plot_badpix
 
 
@@ -155,13 +155,15 @@ class FixBadPixelsStep(Step):
             plt.close()
 
         # Save file.
-        output_models = BadPixCubeModel()
-        output_models.update(input_models, extra_fits=True)
         if is2d:
+            output_models = BadPixImageModel()
             data_bpfixed = data_bpfixed[0]
             erro_bpfixed = erro_bpfixed[0]
             pxdq = pxdq[0]
             mask = mask[0]
+        else:
+            output_models = BadPixCubeModel()
+        output_models.update(input_models, extra_fits=True)
         output_models.data = data_bpfixed
         output_models.err = erro_bpfixed
         output_models.dq = pxdq

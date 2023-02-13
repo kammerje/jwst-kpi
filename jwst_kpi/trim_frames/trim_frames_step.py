@@ -7,7 +7,7 @@ from jwst.stpipe import Step
 from scipy.ndimage import median_filter
 
 from .. import utils as ut
-from ..datamodels import TrimmedCubeModel
+from ..datamodels import TrimmedCubeModel, TrimmedImageModel
 from .trim_frames_plots import plot_trim
 
 
@@ -169,10 +169,12 @@ class TrimFramesStep(Step):
 
         # Save file.
         if is2d:
+            output_models = TrimmedImageModel()
             data_trimmed = data_trimmed[0]
             erro_trimmed = erro_trimmed[0]
             pxdq_trimmed = pxdq_trimmed[0]
-        output_models = TrimmedCubeModel()
+        else:
+            output_models = TrimmedCubeModel()
         output_models.update(input_models)
         output_models.data = data_trimmed
         output_models.err = erro_trimmed

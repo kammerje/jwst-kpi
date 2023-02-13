@@ -8,7 +8,7 @@ from xara import core
 
 from .. import utils as ut
 from ..constants import WRAD_DEFAULT
-from ..datamodels import WindowCubeModel
+from ..datamodels import WindowCubeModel, WindowImageModel
 from .window_frames_plots import plot_window
 
 
@@ -117,11 +117,13 @@ class WindowFramesStep(Step):
 
         # Save file.
         if is2d:
+            output_models = WindowImageModel()
             data = data[0]
             erro = erro[0]
             data_windowed = data_windowed[0]
             erro_windowed = erro_windowed[0]
-        output_models = WindowCubeModel()
+        else:
+            output_models = WindowCubeModel()
         output_models.update(input_models, extra_fits=True)
         output_models.data = data_windowed
         output_models.err = erro_windowed

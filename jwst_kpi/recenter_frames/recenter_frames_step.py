@@ -6,7 +6,7 @@ from jwst import datamodels
 from jwst.stpipe import Step
 from xara import core, kpo
 
-from jwst_kpi.datamodels import RecenterCubeModel
+from jwst_kpi.datamodels import RecenterCubeModel, RecenterImageModel
 
 from .. import pupil_data
 from .. import utils as ut
@@ -262,12 +262,15 @@ class RecenterFramesStep(Step):
 
         # Save file.
         output_models = RecenterCubeModel()
-        output_models.update(input_models, extra_fits=True)
         if is2d:
+            output_models = RecenterImageModel()
             data = data[0]
             erro = erro[0]
             data_recentered = data_recentered[0]
             erro_recentered = erro_recentered[0]
+        else:
+            output_models = RecenterCubeModel()
+        output_models.update(input_models, extra_fits=True)
         output_models.data = data_recentered
         output_models.err = erro_recentered
         output_models.data_org = data
