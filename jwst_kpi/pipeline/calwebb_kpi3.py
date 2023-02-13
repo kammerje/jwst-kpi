@@ -130,3 +130,7 @@ class Kpi3Pipeline(Pipeline):
         if new_name == name:
             new_name, separator = ut.remove_suffix_kpi(new_name)
         return new_name, separator
+
+    def finalize_result(self, result, reference_files_used):
+        # Override this function to avoid error about CRDS: we don't use it
+        log.info("KPI Pipeline does not rely on CRDS for reduction")
