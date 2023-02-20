@@ -248,7 +248,7 @@ def fix_bp_fourier(
 
             if n_newdq == 0:
                 break
-            mask = mask | newdq
+            mask_frame = mask_frame | newdq
         data[i] = data_frame
         erro[i] = erro_frame
         mask[i] = mask_frame
