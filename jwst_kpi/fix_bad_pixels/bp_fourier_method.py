@@ -82,6 +82,8 @@ def find_new_badpix(
     mfil_compdata = median_filter(support_comp_data, size=med_size)
     absdiff_compdata = np.abs(support_comp_data - mfil_compdata)
     newdq = absdiff_compdata > med_threshold * np.median(absdiff_compdata)
+    # Bad pixels where mask is True are not new
+    newdq = newdq & ~mask
 
     return newdq
 
@@ -239,7 +241,6 @@ def fix_bp_fourier(
                 # TODO: Remove or use for plotting
                 temp_frame = data_frame.copy()
             # FT times the comp support mask, invert, real for safety
-            # TODO: not best way to get where mask is false
             newdq = find_new_badpix(
                 data_frame,
                 mask_frame,
@@ -248,7 +249,7 @@ def fix_bp_fourier(
                 med_threshold=median_tres,
                 med_size=median_size,
             )
-            n_newdq = np.sum(newdq[~mask_frame])
+            n_newdq = np.sum(newdq)
 
             if n_newdq == 0:
                 break
