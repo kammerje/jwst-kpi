@@ -10,7 +10,7 @@ from poppy import matrixDFT
 from scipy.ndimage import median_filter
 
 from jwst_kpi.constants import (PUPIL_DIR, PUPLDIAM, gain, pscale, wave_niriss,
-                                weff_niriss)
+                                weff_niriss, READ_NOISE)
 
 WL_OVERSIZE = 0.1
 
@@ -75,10 +75,9 @@ def find_new_badpix(
 ) -> np.ndarray:
     support_comp_data = np.real(np.fft.irfft2(np.fft.rfft2(frame) * support_comp))
     mfil_data = median_filter(frame, size=med_size)
-    # TODO: Make read noise a constant
-    read_noise = 16.8  # e-
+    rn = READ_NOISE[instrument]  # e-
     # Calculate poisson + read noise
-    noise = np.sqrt(mfil_data / gain[instrument] + read_noise**2)
+    noise = np.sqrt(mfil_data / gain[instrument] + rn**2)
     support_comp_data /= noise
     mfil_compdata = median_filter(support_comp_data, size=med_size)
     absdiff_compdata = np.abs(support_comp_data - mfil_compdata)

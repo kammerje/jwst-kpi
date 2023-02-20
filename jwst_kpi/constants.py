@@ -20,6 +20,14 @@ pscale = {
 
 PUPIL_DIR = pupil_data.__path__[0]
 
+# All from JDocs "Detector Performance" pages
+READ_NOISE = {
+    "NIRCAM_SHORT": 15.77,  # e-
+    "NIRCAM_LONG": 13.25,  # e-
+    "NIRISS": 16.8,  # e-
+    "MIRI": 6.0,  # e-
+}
+
 # Detector gains.
 # https://jwst-docs.stsci.edu/jwst-near-infrared-camera/nircam-instrumentation/nircam-detector-overview/nircam-detector-performance
 # https://jwst-docs.stsci.edu/jwst-near-infrared-imager-and-slitless-spectrograph/niriss-instrumentation/niriss-detector-overview/niriss-detector-performance
