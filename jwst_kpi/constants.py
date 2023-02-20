@@ -6,6 +6,7 @@ from astroquery.svo_fps import SvoFps
 # Detector pixel scales.
 # TODO: assumes that NIRISS pixels are square but they are slightly
 #       rectangular.
+# TODO: Make uppercase to avoid conflicts with variable names
 # https://jwst-docs.stsci.edu/jwst-near-infrared-camera/nircam-instrumentation/nircam-detector-overview
 # https://jwst-docs.stsci.edu/jwst-near-infrared-imager-and-slitless-spectrograph/niriss-instrumentation/niriss-detector-overview
 # https://jwst-docs.stsci.edu/jwst-mid-infrared-instrument/miri-instrumentation/miri-detector-overview
@@ -60,3 +61,4 @@ del filter_list
 WRAD_DEFAULT = 24
 
 DIAM = 6.559348  # / Flat-to-flat distance across pupil in V3 axis
+PUPLDIAM = 6.603464  # / Full pupil file size, incl padding.

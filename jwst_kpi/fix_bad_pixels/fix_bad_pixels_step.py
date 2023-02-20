@@ -6,6 +6,7 @@ from jwst import datamodels
 from jwst.datamodels.dqflags import pixel as pxdq_flags
 from jwst.stpipe import Step
 
+from jwst_kpi.fix_bad_pixels.bp_fourier_method import fix_bp_fourier
 from jwst_kpi.fix_bad_pixels.bp_medfilt_method import fix_bp_medfilt
 
 from .. import utils as ut
@@ -133,6 +134,15 @@ class FixBadPixelsStep(Step):
                 data, erro, mask, medfilt_size=self.medfilt_size
             )
             mask_mod = mask.copy()
+        elif self.method == "fourier":
+            # TODO: Outlier detection optional and niter
+            # TODO: Use same mech as extraction to find pupil mask?
+            instrument = input_models.meta.instrument.name
+            pupil_name = input_models.meta.instrument.pupil
+            filt = input_models.meta.instrument.filter
+            data_bpfixed, erro_bpfixed, mask_mod = fix_bp_fourier(
+                data, erro, mask, instrument, pupil_name, filt
+            )
         elif self.method not in self.method_allowed:
             raise ValueError(f"Unknown bad pixel cleaning method '{self.method}'")
         else:
