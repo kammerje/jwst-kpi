@@ -171,63 +171,14 @@ def fourier_correction(data, mask, support_comp):
     bz_mp_pinv = np.linalg.pinv(bz_mat)
 
     data_out = data.copy()
-    data_corr2 = data.copy()
-    # TODO: Understand why set to 0 (I thought offset was applied on current value)
+    # Set bad pixels to 0 before doing FT and correction to avoid abrupt jumps and Gibbs phenomenon
     data_out[mask_inds] = 0.0
     data_ft = np.fft.rfft2(data_out)[fourier_inds]  # Vector of elements outside support
     data_ft_vect = np.append(data_ft.real, data_ft.imag)  # Stack real and imaginary
     corr = np.real(
         data_ft_vect @ bz_mp_pinv
     )  # Apply correction, real just for safety but should not affect
-    # data_out_precorr = data_out.copy()
     data_out[mask_inds] -= corr
-    # data_corr2[mask_inds] -= corr
-    # corr2d = np.zeros_like(data)
-    # corr2d[mask_inds] = corr
-
-    # __import__('ipdb').set_trace()
-    # data_ft = np.fft.rfft2(data)
-    # data_corr_ft = np.fft.rfft2(data_out)
-    # data_corr2_ft = np.fft.rfft2(data_corr2)
-    #
-    # fig, axs = plt.subplots(ncols=3, nrows=2, figsize=(18, 10), sharex=True, sharey=True)
-    # axs[0, 0].imshow(np.abs(data_ft), norm="log")
-    # axs[0, 1].imshow(np.abs(data_corr_ft), norm="log")
-    # axs[0, 2].imshow(np.abs(data_corr2_ft), norm="log")
-    # axs[1, 0].imshow(np.abs(data_ft), norm="log")
-    # axs[1, 1].imshow(np.abs(data_corr_ft) - np.abs(data_ft), norm="symlog")
-    # axs[1, 2].imshow(np.abs(data_corr2_ft) - np.abs(data_ft), norm="symlog")
-    # plt.show()
-    #
-    # __import__('ipdb').set_trace()
-    # data_ft_out = data_ft[fourier_inds]
-    # data_corr_ft_out = data_corr_ft[fourier_inds]
-    # data_corr2_ft_out = data_corr2_ft[fourier_inds]
-    #
-    # __import__('ipdb').set_trace()
-    # fig, axs = plt.subplots(ncols=4, nrows=2, figsize=(18, 10), sharex=True, sharey=True)
-    # mynorm = SymLogNorm(1.0, vmin=-1e4, vmax=1e4)
-    # im = axs[0, 0].imshow(data, norm=mynorm)
-    # axs[0, 0].set_title("Original")
-    # axs[0, 1].imshow(data_out_precorr, norm=mynorm)
-    # axs[0, 1].set_title("Original with bp = 0")
-    # axs[0, 2].imshow(data_out, norm=mynorm)
-    # axs[0, 2].set_title("Corrected default")
-    # axs[0, 3].imshow(data_corr2, norm=mynorm)
-    # axs[0, 3].set_title("Corrected without pre-zero")
-    # axs[1, 0].imshow(data_out - data, norm=mynorm)
-    # axs[1, 0].set_title("Diff default - data")
-    # axs[1, 1].imshow(corr2d, norm=mynorm)
-    # axs[1, 1].set_title("Correction applied")
-    # axs[1, 2].imshow(data_corr2 - data, norm=mynorm)
-    # axs[1, 2].set_title("Diff corrected no-zero - data")
-    # axs[1, 3].imshow(data_corr2 - data_out, norm=mynorm)
-    # axs[1, 3].set_title("Diff corrected no-zero - default")
-    # fig.subplots_adjust(right=0.8)
-    # cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
-    # fig.colorbar(im, cax=cbar_ax)
-    # # plt.tight_layout()
-    # plt.show()
 
     return data_out
 
