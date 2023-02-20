@@ -9,8 +9,8 @@ from jwst.datamodels.dqflags import pixel as pxdq_flags
 from poppy import matrixDFT
 from scipy.ndimage import median_filter
 
-from jwst_kpi.constants import (PUPIL_DIR, PUPLDIAM, gain, pscale, wave_niriss,
-                                weff_niriss, READ_NOISE)
+from jwst_kpi import utils as ut
+from jwst_kpi.constants import PUPIL_DIR, PUPLDIAM, READ_NOISE, gain, pscale
 
 WL_OVERSIZE = 0.1
 
@@ -56,9 +56,10 @@ def crop_to_psf(data, centers, max_half_size):
     return cropped_data
 
 
-def get_wavelength_arr(filt: str) -> np.ndarray:
-    wavel = wave_niriss[filt]
-    hwhm = weff_niriss[filt] / 2
+def get_wavelength_arr(filt: str, instrument: str) -> np.ndarray:
+    wave_inst, weff_inst = ut.get_wavelegth_and_weff(instrument)
+    wavel = wave_inst[filt]
+    hwhm = weff_inst[filt] / 2
     dwavel = hwhm * (1 + WL_OVERSIZE)
     wavel_arr = np.array([wavel, wavel - dwavel, wavel + dwavel])
 
@@ -123,14 +124,13 @@ def transform_image(image):
 
 def get_fourier_support(filt, pupil, fov_px, instrument):
     # Get central wavelength and +/- HWHM
-    # TODO: Could webbpsf to this polychromatic psf better?
-    wavel_arr = get_wavelength_arr(filt)
+    # TODO: Compare speed and results with webbpsf (calc PSF with nlambda=3)
+    # currently not a dependency, so only add if significant imporvement
+    wavel_arr = get_wavelength_arr(filt, instrument)
 
     psf = np.zeros((fov_px, fov_px), dtype=float)
     for wavel in wavel_arr:
         psf += get_psf(wavel, pupil, fov_px, instrument)
-        # plt.imshow(psf)
-        # plt.show()
 
     psf_transform = transform_image(psf)
 
@@ -216,8 +216,9 @@ def fix_bp_fourier(
     factor = NRM_FACTOR if pupil == "NRM" else CLEAR_FACTOR
     fact_rad2deg = 180.0 / np.pi
     fact_deg2pix = 1000.0 * 3600.0 / pscale[instrument]
+    wave_inst, _ = ut.get_wavelengths(instrument)
     max_dist = (
-        factor * wave_niriss[filt] * 1e-6 / PUPLDIAM * fact_rad2deg * fact_deg2pix
+        factor * wave_inst[filt] * 1e-6 / PUPLDIAM * fact_rad2deg * fact_deg2pix
     )
     pupil_noise_mask = dist > max_dist
     flagged_per_frame = np.sum(mask, axis=(1, 2))

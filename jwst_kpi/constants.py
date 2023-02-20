@@ -1,7 +1,6 @@
 """
 Constants used throughout KPI pipeline
 """
-from astroquery.svo_fps import SvoFps
 from . import pupil_data
 
 # Detector pixel scales.
@@ -38,36 +37,6 @@ gain = {
     "NIRISS": 1.61,  # e-/ADU
     "MIRI": 4.0,  # e-/ADU
 }
-
-# TODO: Convert to function?
-# Load the NIRCam, NIRISS, and MIRI filters from the SVO Filter Profile
-# Service.
-# http://svo2.cab.inta-csic.es/theory/fps/
-wave_nircam = {}
-weff_nircam = {}
-filter_list = SvoFps.get_filter_list(facility="JWST", instrument="NIRCAM")
-for i in range(len(filter_list)):
-    name = filter_list["filterID"][i]
-    name = name[name.rfind(".") + 1 :]
-    wave_nircam[name] = filter_list["WavelengthMean"][i] / 1e4  # micron
-    weff_nircam[name] = filter_list["WidthEff"][i] / 1e4  # micron
-wave_niriss = {}
-weff_niriss = {}
-filter_list = SvoFps.get_filter_list(facility="JWST", instrument="NIRISS")
-for i in range(len(filter_list)):
-    name = filter_list["filterID"][i]
-    name = name[name.rfind(".") + 1 :]
-    wave_niriss[name] = filter_list["WavelengthMean"][i] / 1e4  # micron
-    weff_niriss[name] = filter_list["WidthEff"][i] / 1e4  # micron
-wave_miri = {}
-weff_miri = {}
-filter_list = SvoFps.get_filter_list(facility="JWST", instrument="MIRI")
-for i in range(len(filter_list)):
-    name = filter_list["filterID"][i]
-    name = name[name.rfind(".") + 1 :]
-    wave_miri[name] = filter_list["WavelengthMean"][i] / 1e4  # micron
-    weff_miri[name] = filter_list["WidthEff"][i] / 1e4  # micron
-del filter_list
 
 WRAD_DEFAULT = 24
 

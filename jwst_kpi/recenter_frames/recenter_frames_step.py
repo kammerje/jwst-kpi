@@ -9,8 +9,7 @@ from xara import core, kpo
 from jwst_kpi.datamodels import RecenterCubeModel
 
 from .. import utils as ut
-from ..constants import (pscale, wave_miri, wave_nircam, wave_niriss,
-                         weff_miri, weff_nircam, weff_niriss, PUPIL_DIR)
+from ..constants import PUPIL_DIR, pscale
 from .recenter_frames_plots import plot_recenter
 
 
@@ -119,17 +118,21 @@ class RecenterFramesStep(Step):
         if "FPNM" in self.method:
 
             # Check if the filter is known.
-            if INSTRUME == "NIRCAM":
-                filter_allowed = wave_nircam.keys()
-            elif INSTRUME == "NIRISS":
-                filter_allowed = wave_niriss.keys()
-            elif INSTRUME == "MIRI":
-                filter_allowed = wave_miri.keys()
+            wave_inst, weff_inst = ut.get_wavelengths(INSTRUME)
+            filter_allowed = wave_inst.keys()
+
             if FILTER not in filter_allowed:
-                raise UserWarning("Unknown filter")
+                raise ValueError(
+                    f"Unknown filter name {FILTER}. Available filters for instrument "
+                    f"{INSTRUME} are: {filter_allowed}"
+                )
+
+            wave = wave_inst[FILTER] * 1e-6  # m
+            weff = weff_inst[FILTER] * 1e-6  # m
 
             # Get pupil model path and filter properties.
             pupil_name = input_models.meta.instrument.pupil
+            # TODO: Handle pupil path/loading in util function
             if INSTRUME == "NIRCAM":
                 if self.pupil_path is None:
                     if pupil_name == "MASKRND":
@@ -139,8 +142,6 @@ class RecenterFramesStep(Step):
                     else:
                         default_pupil_model = "nircam_clear_pupil.fits"
                     self.pupil_path = os.path.join(PUPIL_DIR, default_pupil_model)
-                wave = wave_nircam[FILTER] * 1e-6  # m
-                weff = weff_nircam[FILTER] * 1e-6  # m
             elif INSTRUME == "NIRISS":
                 if self.pupil_path is None:
                     if pupil_name == "NRM":
@@ -148,14 +149,10 @@ class RecenterFramesStep(Step):
                     else:
                         default_pupil_model = "niriss_clear_pupil.fits"
                     self.pupil_path = os.path.join(PUPIL_DIR, default_pupil_model)
-                wave = wave_niriss[FILTER] * 1e-6  # m
-                weff = weff_niriss[FILTER] * 1e-6  # m
             elif INSTRUME == "MIRI":
                 if self.pupil_path is None:
                     default_pupil_model = "miri_clear_pupil.fits"
                     self.pupil_path = os.path.join(PUPIL_DIR, default_pupil_model)
-                wave = wave_miri[FILTER] * 1e-6  # m
-                weff = weff_miri[FILTER] * 1e-6  # m
 
             # print("Rotating pupil model by %.2f deg (counter-clockwise)" % V3I_YANG)
 

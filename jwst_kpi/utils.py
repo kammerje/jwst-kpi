@@ -3,6 +3,7 @@ from __future__ import division
 import re
 
 import matplotlib
+from astroquery.svo_fps import SvoFps
 
 matplotlib.rcParams.update({"font.size": 14})
 
@@ -12,7 +13,7 @@ matplotlib.rcParams.update({"font.size": 14})
 # =============================================================================
 
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional, Tuple, Union
 
 import astropy.io.fits as pyfits
 
@@ -107,3 +108,30 @@ def remove_suffix_kpi(name):
     if separator is None:
         separator = '_'
     return name, separator
+
+
+def get_wavelengths(instrument: str) -> Tuple[dict, dict]:
+    """
+    Get wavelengths for a given instruments
+
+    Gives the mean wavelength and effective width for each filter in a dictionary
+
+    Parameters
+    ----------
+    instrument
+        Instrument name
+
+    Returns
+    -------
+    Tuple[dict, dict]
+        Dictionary of filter names and wavelengths, and dictionary of filter
+        names and effective widths
+    """
+    filt_tbl = SvoFps.get_filter_list(facility="JWST", instrument=instrument)
+    wave_dict = dict()
+    weff_dict = dict()
+    for filt_row in filt_tbl:
+        name = filt_row["filterID"].split(".")[-1]
+        wave_dict[name] = filt_row["WavelengthMean"] / 1e4  # Angstrom -> micron
+        weff_dict[name] = filt_row["WidthEff"] / 1e4  # Angstrom -> micron
+    return wave_dict, weff_dict
