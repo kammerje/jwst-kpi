@@ -8,13 +8,10 @@ from xara import core, kpo
 
 from jwst_kpi.datamodels import RecenterCubeModel
 
-from .. import pupil_data
 from .. import utils as ut
 from ..constants import (pscale, wave_miri, wave_nircam, wave_niriss,
-                         weff_miri, weff_nircam, weff_niriss)
+                         weff_miri, weff_nircam, weff_niriss, PUPIL_DIR)
 from .recenter_frames_plots import plot_recenter
-
-PUPIL_DIR = pupil_data.__path__[0]
 
 
 class RecenterFramesStep(Step):

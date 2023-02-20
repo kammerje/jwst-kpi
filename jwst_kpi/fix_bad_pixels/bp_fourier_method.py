@@ -11,10 +11,7 @@ from poppy import matrixDFT
 from scipy.ndimage import median_filter
 
 from .. import pupil_data
-from jwst_kpi.constants import PUPLDIAM, gain, pscale, wave_niriss, weff_niriss
-
-# TODO: This could be constant
-PUPIL_DIR = pupil_data.__path__[0]
+from jwst_kpi.constants import PUPLDIAM, gain, pscale, wave_niriss, weff_niriss, PUPIL_DIR
 
 WL_OVERSIZE = 0.1
 

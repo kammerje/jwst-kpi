@@ -11,7 +11,6 @@ import matplotlib
 from jwst import datamodels
 from jwst.stpipe import Pipeline
 
-from .. import pupil_data
 from .. import utils as ut
 from ..empirical_uncertainties import empirical_uncertainties_step
 from ..extract_kerphase import extract_kerphase_step
@@ -28,8 +27,6 @@ __all__ = ["Kpi3Pipeline"]
 # Define logging
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
-
-PUPIL_DIR = pupil_data.__path__[0]
 
 
 class Kpi3Pipeline(Pipeline):

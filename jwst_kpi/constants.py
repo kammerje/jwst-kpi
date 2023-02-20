@@ -2,6 +2,7 @@
 Constants used throughout KPI pipeline
 """
 from astroquery.svo_fps import SvoFps
+from . import pupil_data
 
 # Detector pixel scales.
 # TODO: assumes that NIRISS pixels are square but they are slightly
@@ -16,6 +17,8 @@ pscale = {
     "NIRISS": 65.55,  # mas
     "MIRI": 110.0,  # mas
 }
+
+PUPIL_DIR = pupil_data.__path__[0]
 
 # Detector gains.
 # https://jwst-docs.stsci.edu/jwst-near-infrared-camera/nircam-instrumentation/nircam-detector-overview/nircam-detector-performance

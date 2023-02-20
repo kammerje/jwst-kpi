@@ -6,14 +6,11 @@ from jwst import datamodels
 from jwst.stpipe import Step
 from xara import core, kpo
 
-from .. import pupil_data
 from .. import utils as ut
 from ..constants import (gain, pscale, wave_miri, wave_nircam, wave_niriss,
-                         weff_miri, weff_nircam, weff_niriss, DIAM)
+                         weff_miri, weff_nircam, weff_niriss, DIAM, PUPIL_DIR)
 from ..datamodels import KPFitsModel
 from .extract_kerphase_plots import plot_kerphase
-
-PUPIL_DIR = pupil_data.__path__[0]
 
 
 class ExtractKerphaseStep(Step):
