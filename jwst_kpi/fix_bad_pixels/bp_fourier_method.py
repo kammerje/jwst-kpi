@@ -224,9 +224,6 @@ def fix_bp_fourier(
     if np.sum(pupil_noise_mask) < np.mean(flagged_per_frame):
         raise RuntimeError("Subarray too small to estimate noise.")
 
-    # TODO: Data orig can be removed or used for plots
-    data_orig = data.copy()
-    mask_orig = mask.copy()
     median_size = 3  # pix
     median_tres = 50.0  # JK: changed from 28 to 20 in order to capture all bad pixels
     niter = 10
@@ -234,12 +231,9 @@ def fix_bp_fourier(
         data_frame = data[i]
         erro_frame = erro[i]
         mask_frame = mask[i]
-        for j in range(niter):
+        for _j in range(niter):
             data_frame = fourier_correction(data_frame, mask_frame, support_comp)
             erro_frame = fourier_correction(erro_frame, mask_frame, support_comp)
-            if j == 0:
-                # TODO: Remove or use for plotting
-                temp_frame = data_frame.copy()
             # FT times the comp support mask, invert, real for safety
             newdq = find_new_badpix(
                 data_frame,
@@ -257,7 +251,6 @@ def fix_bp_fourier(
         data[i] = data_frame
         erro[i] = erro_frame
         mask[i] = mask_frame
-        # TODO: Add plotting here?
 
     return data, erro, mask
 
