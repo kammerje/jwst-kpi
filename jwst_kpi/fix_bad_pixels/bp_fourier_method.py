@@ -1,17 +1,16 @@
 import logging
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
 from astropy.io import fits
 from jwst.datamodels.dqflags import pixel as pxdq_flags
-from matplotlib.colors import SymLogNorm
 from poppy import matrixDFT
 from scipy.ndimage import median_filter
 
-from .. import pupil_data
-from jwst_kpi.constants import PUPLDIAM, gain, pscale, wave_niriss, weff_niriss, PUPIL_DIR
+from jwst_kpi.constants import (PUPIL_DIR, PUPLDIAM, gain, pscale, wave_niriss,
+                                weff_niriss)
 
 WL_OVERSIZE = 0.1
 
