@@ -179,8 +179,8 @@ class FixBadPixelsStep(Step):
         output_models.err = erro_bpfixed
         output_models.dq = pxdq
         output_models.meta.kpi_preprocess.fix_meth = self.method
-        output_models.bad_bits = bb
         output_models.dq_mod = mask_mod.astype("uint32")
+        output_models.meta.kpi_preprocess.bad_bits = bb
         output_models.meta.kpi_preprocess.msize = self.medfilt_size
         output_models.meta.cal_step_kpi.fix_badpix = "COMPLETE"
 
