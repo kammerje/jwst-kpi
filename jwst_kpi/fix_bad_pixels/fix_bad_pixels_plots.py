@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def plot_badpix(data, data_bpfixed, bad_bits, mask, good_frames, method="medfilt"):
+def plot_badpix(data, data_bpfixed, bad_bits, mask, good_frames=None, method="medfilt"):
     """
     Plot bad pixel correction
 
@@ -17,7 +17,7 @@ def plot_badpix(data, data_bpfixed, bad_bits, mask, good_frames, method="medfilt
         Bad pixel codes used
     mask : np.ndarray
         Mask showing bad pixel positions
-    good_frames : List[int]
+    good_frames : Optional[List[int]]
         List of good frames, bad frames will be skipped.
     method : str
         Method used to correct bad pixels

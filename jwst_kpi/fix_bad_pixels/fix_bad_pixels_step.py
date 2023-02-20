@@ -5,7 +5,8 @@ import numpy as np
 from jwst import datamodels
 from jwst.datamodels.dqflags import pixel as pxdq_flags
 from jwst.stpipe import Step
-from scipy.ndimage import median_filter
+
+from jwst_kpi.fix_bad_pixels.bp_medfilt_method import fix_bp_medfilt
 
 from .. import utils as ut
 from ..datamodels import BadPixCubeModel
@@ -52,6 +53,7 @@ class FixBadPixelsStep(Step):
         previous_suffix = string(default=None)
         bad_bits = string_list(default=list('DO_NOT_USE'))
         method_allowed = string_list(default=list('medfilt', 'fourier'))
+        medfilt_size = integer(default=5)
         bad_bits_allowed = string_list(default=None)
         show_plots = boolean(default=False)
         good_frames = int_list(default=None)
@@ -82,19 +84,6 @@ class FixBadPixelsStep(Step):
         else:
             is2d = False
         nf, sy, sx = data.shape
-        if good_frames is not None:
-            if len(good_frames) < 1:
-                raise UserWarning(
-                    "List of good frames needs to contain at least one element"
-                )
-            elif not all(isinstance(item, int) for item in good_frames):
-                raise UserWarning(
-                    "List of good frames may only contain integer elements"
-                )
-            elif np.max(good_frames) >= nf or np.min(good_frames) < nf * (-1):
-                raise UserWarning(
-                    "Some of the provided good frames are outside the data range"
-                )
 
         # Make bad pixel map.
         mask = pxdq < 0
@@ -109,37 +98,47 @@ class FixBadPixelsStep(Step):
                 else:
                     bb += ", " + self.bad_bits[i]
 
+        if good_frames is not None:
+            if len(good_frames) < 1:
+                raise UserWarning(
+                    "List of good frames needs to contain at least one element"
+                )
+            elif not all(isinstance(item, int) for item in good_frames):
+                raise UserWarning(
+                    "List of good frames may only contain integer elements"
+                )
+            elif np.max(good_frames) >= nf or np.min(good_frames) < nf * (-1):
+                raise UserWarning(
+                    "Some of the provided good frames are outside the data range"
+                )
+            data_orig = data.copy()
+            erro_orig = erro.copy()
+            pxdq_orig = pxdq.copy()
+            mask_orig = mask.copy()
+            data = data[good_frames]
+            erro = erro[good_frames]
+            pxdq = pxdq[good_frames]
+            mask = mask[good_frames]
         self.log.info(
             "--> Found %.0f bad pixels (%.2f%%)"
             % (
-                np.sum(mask[good_frames]),
-                np.sum(mask[good_frames]) / np.prod(mask[good_frames].shape) * 100.0,
+                np.sum(mask),
+                np.sum(mask) / np.prod(mask.shape) * 100.0,
             )
         )
 
         # Fix bad pixels.
-        data_bpfixed = data.copy()
-        erro_bpfixed = erro.copy()
-        if self.method not in self.method_allowed:
-            raise UserWarning("Unknown bad pixel cleaning method")
+        if self.method == "medfilt":
+            data_bpfixed, erro_bpfixed = fix_bp_medfilt(
+                data, erro, mask, medfilt_size=self.medfilt_size
+            )
+            mask_mod = mask.copy()
+        elif self.method not in self.method_allowed:
+            raise ValueError(f"Unknown bad pixel cleaning method '{self.method}'")
         else:
-            if self.method == "medfilt":
-                for i in range(nf):
-                    if (
-                        good_frames is None
-                        or i in good_frames
-                        or (nf - i) * (-1) in good_frames
-                    ):
-                        data_bpfixed[i][mask[i]] = median_filter(
-                            data_bpfixed[i], size=5
-                        )[mask[i]]
-                        erro_bpfixed[i][mask[i]] = median_filter(
-                            erro_bpfixed[i], size=5
-                        )[mask[i]]
-            elif self.method == "fourier":
-                raise NotImplementedError(
-                    "Fourier bad pixel cleaning method not implemented yet"
-                )
+            raise NotImplementedError(
+                f"{self.method} bad pixel cleaning method not implemented yet"
+            )
 
         # Get output file path.
         # path = ut.get_output_base(file, output_dir=output_dir)
@@ -148,11 +147,25 @@ class FixBadPixelsStep(Step):
 
         # Plot.
         if self.plot:
-            plot_badpix(data, data_bpfixed, bb, mask, good_frames, method=self.method)
+            plot_badpix(data, data_bpfixed, bb, mask, method=self.method)
             plt.savefig(stem + ".pdf")
             if self.show_plots:
                 plt.show()
             plt.close()
+
+        if good_frames is not None:
+            data_final = data_orig.copy()
+            erro_final = erro_orig.copy()
+            pxdq_final = pxdq_orig.copy()
+            mask_final = mask_orig.copy()
+            data_final[good_frames] = data_bpfixed
+            erro_final[good_frames] = erro_bpfixed
+            pxdq_final[good_frames] = pxdq
+            mask_final[good_frames] = mask_mod
+            data_bpfixed = data_final
+            erro_bpfixed = erro_final
+            pxdq = pxdq_final
+            mask_mod = mask_final
 
         # Save file.
         output_models = BadPixCubeModel()
@@ -161,13 +174,14 @@ class FixBadPixelsStep(Step):
             data_bpfixed = data_bpfixed[0]
             erro_bpfixed = erro_bpfixed[0]
             pxdq = pxdq[0]
-            mask = mask[0]
+            mask_mod = mask_mod[0]
         output_models.data = data_bpfixed
         output_models.err = erro_bpfixed
         output_models.dq = pxdq
         output_models.meta.kpi_preprocess.fix_meth = self.method
-        output_models.dq_mod = mask.astype("uint32")
         output_models.bad_bits = bb
+        output_models.dq_mod = mask_mod.astype("uint32")
+        output_models.meta.kpi_preprocess.msize = self.medfilt_size
         output_models.meta.cal_step_kpi.fix_badpix = "COMPLETE"
 
         self.log.info("--> Fix bad pixels step done")

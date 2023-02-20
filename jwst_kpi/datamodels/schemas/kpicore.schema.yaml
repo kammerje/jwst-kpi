@@ -42,6 +42,10 @@ properties:
             # NOTE: Putting in primary for now instead of repeating in all extensions
             # (originally in SCI and ERR)
             # fits_hdu: PRIMARY
+          msize:
+            title: Bad pixel median filter size
+            type: number
+            fits_keyword: MSIZE
       cal_step_kpi:
         title: Calibration step information for KPI steps
         type: object
