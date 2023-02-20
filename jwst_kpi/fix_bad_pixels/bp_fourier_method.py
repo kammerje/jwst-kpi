@@ -201,7 +201,7 @@ def fix_bp_fourier(
     # TODO: Could get wavelengths here and make correction more indep of filters
     fov_px = data.shape[1]
     # Get fourier support of the pupil
-    support = get_fourier_support(filt, pupil, fov_px, "NIRISS")
+    support = get_fourier_support(filt, pupil, fov_px, instrument)
     support /= np.max(support)
     # Get where support is ~ 0 (where should there NOT be signal)
     support_comp = support < 1e-3

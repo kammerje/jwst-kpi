@@ -101,12 +101,12 @@ def remove_suffix_kpi(name):
     separator = None
     match = REMOVE_SUFFIX_REGEX_KPI.match(name)
     try:
-        name = match.group('root')
-        separator = match.group('separator')
+        name = match.group("root")
+        separator = match.group("separator")
     except AttributeError:
         pass
     if separator is None:
-        separator = '_'
+        separator = "_"
     return name, separator
 
 
