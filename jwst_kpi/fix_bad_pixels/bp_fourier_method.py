@@ -76,7 +76,7 @@ def find_new_badpix(
     support_comp_data = np.real(np.fft.irfft2(np.fft.rfft2(frame) * support_comp))
     mfil_data = median_filter(frame, size=med_size)
     # TODO: Make read noise a constant
-    read_noise = 18.32  # e-
+    read_noise = 16.8  # e-
     # Calculate poisson + read noise
     noise = np.sqrt(mfil_data / gain[instrument] + read_noise**2)
     support_comp_data /= noise
