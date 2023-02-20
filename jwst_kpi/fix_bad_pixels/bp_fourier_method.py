@@ -266,12 +266,12 @@ if __name__ == "__main__":
     hdul = fits.open(
         "examples/kerphase_testdata/NIRISS/TYC-8906-1660-1/jw01093009001_03103_00001_nis_calints.fits"
     )
-    __import__('ipdb').set_trace()
+    __import__("ipdb").set_trace()
     data = hdul["SCI"].data
     erro = hdul["ERR"].data
     pxdq = hdul["DQ"].data
     bad_bits = ["DO_NOT_USE"]
-    mask = pxdq < 0  # Should be all flase
+    mask = pxdq < 0  # Should be all false
     for i in range(len(bad_bits)):
         pxdq_flag = pxdq_flags[bad_bits[i]]
         mask = mask | (pxdq & pxdq_flag == pxdq_flag)
