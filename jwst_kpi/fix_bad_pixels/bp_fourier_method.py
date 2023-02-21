@@ -193,7 +193,10 @@ def fix_bp_fourier(
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     # TODO: Gen documentation
 
-    # TODO: Could be removed, should usually be done by trim step
+    data = data.copy()
+    erro = erro.copy()
+    mask = mask.copy()
+
     if crop_frames:
         centers, max_half_size = find_psf_centers(data)
         data = crop_to_psf(data, centers, max_half_size)
