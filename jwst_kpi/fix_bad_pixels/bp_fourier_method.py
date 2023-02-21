@@ -57,7 +57,7 @@ def crop_to_psf(data, centers, max_half_size):
 
 
 def get_wavelength_arr(filt: str, instrument: str) -> np.ndarray:
-    wave_inst, weff_inst = ut.get_wavelegth_and_weff(instrument)
+    wave_inst, weff_inst = ut.get_wavelengths(instrument)
     wavel = wave_inst[filt]
     hwhm = weff_inst[filt] / 2
     dwavel = hwhm * (1 + WL_OVERSIZE)
