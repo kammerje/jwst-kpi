@@ -55,6 +55,8 @@ class FixBadPixelsStep(Step):
         bad_bits = string_list(default=list('DO_NOT_USE'))
         method_allowed = string_list(default=list('medfilt', 'fourier'))
         medfilt_size = integer(default=5)
+        find_new = boolean(default=True)
+        new_niter = integer(default=10)
         bad_bits_allowed = string_list(default=None)
         show_plots = boolean(default=False)
         good_frames = int_list(default=None)
@@ -130,18 +132,30 @@ class FixBadPixelsStep(Step):
 
         # Fix bad pixels.
         if self.method == "medfilt":
+            if self.find_new:
+                self.log.warning(
+                    "find_new=True not implemented for medfilt method"
+                )
             data_bpfixed, erro_bpfixed = fix_bp_medfilt(
                 data, erro, mask, medfilt_size=self.medfilt_size
             )
             mask_mod = mask.copy()
         elif self.method == "fourier":
-            # TODO: Outlier detection optional and niter
-            # TODO: Use same mech as extraction to find pupil mask?
             instrument = input_models.meta.instrument.name
             pupil_name = input_models.meta.instrument.pupil
             filt = input_models.meta.instrument.filter
+            # TODO: Assert if data was recentered (and/or trimmed?):
+            # if not raise error or set crop_frames to True
+            # (or ask user to do so with option)
             data_bpfixed, erro_bpfixed, mask_mod = fix_bp_fourier(
-                data, erro, mask, instrument, pupil_name, filt
+                data,
+                erro,
+                mask,
+                instrument,
+                pupil_name,
+                filt,
+                find_new=self.find_new,
+                new_niter=self.new_niter,
             )
         elif self.method not in self.method_allowed:
             raise ValueError(f"Unknown bad pixel cleaning method '{self.method}'")

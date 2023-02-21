@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -188,7 +188,10 @@ def fix_bp_fourier(
     pupil: str,
     filt: str,
     crop_frames: bool = False,
-) -> np.ndarray:
+    find_new: bool = True,
+    new_niter: int = 10,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    # TODO: Gen documentation
 
     # TODO: Could be removed, should usually be done by trim step
     if crop_frames:
@@ -198,7 +201,6 @@ def fix_bp_fourier(
         mask = crop_to_psf(mask, centers, max_half_size)
 
     # Get fourier support of the pupil model, and complement of support
-    # TODO: Could get wavelengths here and make correction more indep of filters
     fov_px = data.shape[1]
     # Get fourier support of the pupil
     support = get_fourier_support(filt, pupil, fov_px, instrument)
@@ -227,28 +229,31 @@ def fix_bp_fourier(
 
     median_size = 3  # pix
     median_tres = 50.0  # JK: changed from 28 to 20 in order to capture all bad pixels
-    niter = 10
+    if not find_new:
+        # If not finding new bad pixels, only do one iteration
+        new_niter = 1
     for i in range(data.shape[0]):
         data_frame = data[i]
         erro_frame = erro[i]
         mask_frame = mask[i]
-        for _j in range(niter):
+        for _j in range(new_niter):
             data_frame = fourier_correction(data_frame, mask_frame, support_comp)
             erro_frame = fourier_correction(erro_frame, mask_frame, support_comp)
-            # FT times the comp support mask, invert, real for safety
-            newdq = find_new_badpix(
-                data_frame,
-                mask_frame,
-                support_comp,
-                instrument,
-                med_threshold=median_tres,
-                med_size=median_size,
-            )
-            n_newdq = np.sum(newdq)
+            if find_new:
+                # FT times the comp support mask, invert, real for safety
+                newdq = find_new_badpix(
+                    data_frame,
+                    mask_frame,
+                    support_comp,
+                    instrument,
+                    med_threshold=median_tres,
+                    med_size=median_size,
+                )
+                n_newdq = np.sum(newdq)
 
-            if n_newdq == 0:
-                break
-            mask_frame = mask_frame | newdq
+                if n_newdq == 0:
+                    break
+                mask_frame = mask_frame | newdq
         data[i] = data_frame
         erro[i] = erro_frame
         mask[i] = mask_frame
