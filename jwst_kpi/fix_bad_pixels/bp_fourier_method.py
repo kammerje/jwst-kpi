@@ -230,6 +230,7 @@ def fix_bp_fourier(
         raise RuntimeError("Subarray too small to estimate noise.")
 
     median_size = 3  # pix
+    # TODO: Test and update this
     median_tres = 50.0  # JK: changed from 28 to 20 in order to capture all bad pixels
     if not find_new:
         # If not finding new bad pixels, only do one iteration
