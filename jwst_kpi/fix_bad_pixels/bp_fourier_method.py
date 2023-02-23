@@ -155,12 +155,9 @@ def fourier_correction(data, mask, support_comp):
     # subtract to go vrom 0 to value, then from -value to 0 (ish)
     # Then phase -> 0 to almost pi, - pi to 0
     # From what I understand this is to replicate fft shift
-    # TODO: xh and yh, and shape[0] or shape[1] were flipped in generation
-    # Don't matter for square arrays
     yphase = 2 * np.pi * np.arange(yh + 1) / ys  # 0 to pi
     xphase = 2 * np.pi * (((np.arange(xs) + xh) % xs) - xh) / xs
     xx, yy = np.meshgrid(yphase, xphase)
-    # TODO: vectorize?
     # For each bad pixel, get the phase shift and add to the transfer matrix
     for i in range(nbadpix):
         cdft = np.exp(-1j * (mask_inds[0][i] * yy + mask_inds[1][i] * xx))
