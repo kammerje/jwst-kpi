@@ -78,6 +78,8 @@ def find_new_badpix(
     mfil_data = median_filter(frame, size=med_size)
     rn = READ_NOISE[instrument]  # e-
     # Calculate poisson + read noise
+    # TODO: Outlier detection in image plane seems to outperform this for NIRISS CLEARP
+    # Probably need to calibrate thresholds used to flag outliers.
     noise = np.sqrt(mfil_data / gain[instrument] + rn**2)
     support_comp_data /= noise
     mfil_compdata = median_filter(support_comp_data, size=med_size)
