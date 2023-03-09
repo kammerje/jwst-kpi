@@ -41,6 +41,16 @@ class FixBadPixelsStep(Step):
     method_allowed : List[str]
         Bad pixel correction methods allowed.
         Default ['medfilt', 'fourier'] should not be changed by users.
+    medfilt_size : int
+        Size of median filter in medfilt method.
+        Default is 5.
+    find_new : bool
+        Should new bad pixels be automatically be detected?
+        Currently only supported for the 'fourier' method.
+        Default is True.
+    new_niter : int
+        Maximum number of iterations when detecting new bad pixels.
+        Default is 10.
     bad_bits_allowed : Optional[List[str]]
         List of values allowed for "bad_bits" attribute.
         Default list imported from JWST pipeline.
