@@ -10,6 +10,25 @@ def fix_bp_medfilt(
     mask: np.ndarray,
     medfilt_size: int = 5,
 ) -> Tuple[np.ndarray]:
+    """
+    Fix bad pixels in data and error cubes with a median filter.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        3D array containing data
+    erro : np.ndarray
+        3D array containing errors
+    mask
+        3D array containing bad pixel mask (True where bad)
+    medfilt_size
+        Size of median filter used to correct bad pixels
+
+    Returns
+    -------
+    Tuple[np.ndarray]
+        Fixed data and error cubes
+    """
 
     nf = data.shape[0]
     data_bpfixed = data.copy()
