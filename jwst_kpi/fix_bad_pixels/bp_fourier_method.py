@@ -21,8 +21,29 @@ log.setLevel(logging.DEBUG)
 
 
 def find_psf_centers(
-    data: np.ndarray, filt_size: Optional[int] = 3, nref: Optional[int] = 5
-) -> np.ndarray:
+    data: np.ndarray, filt_size: Optional[int] = 3, nref: Optional[int] = 5,
+) -> Tuple[np.ndarray, int]:
+    """
+    Find PSF center for each frame in a cube.
+
+    Uses a median filter to find the brightest pixel (PSF center) and return
+    its coordinates for each frame.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        Data cube (3D array)
+    filt_size : Optional[int]
+        Median filter size, defaults to 3
+    nref : Optional[int]
+        Number of reference pixels on the edge of the detector.
+
+    Returns
+    -------
+    Tuple[np.ndarray, int]
+        Array containing center coordinates for each frame
+        and max half size allowed (scalar).
+    """
     nframes, sx, sy = data.shape[0]
     centers = []
     for i in range(nframes):
@@ -32,6 +53,7 @@ def find_psf_centers(
             )
         ]
     centers = np.array(centers)
+    # TODO: Will reference pixels be on this side for all detectors?
     x_max_hsize = min(
         sx - np.max(centers[:, 0]), np.min(centers[:, 0]) - nref
     )  # the bottom 4/5 rows are reference pixels
@@ -41,7 +63,19 @@ def find_psf_centers(
     return centers, max_half_size
 
 
-def crop_to_psf(data, centers, max_half_size):
+def crop_to_psf(data: np.ndarray, centers: np.ndarray, max_half_size: int):
+    """
+    Crop frames to PSF
+
+    Parameters
+    ----------
+    data : np.ndarray
+        Data cube to be cropped
+    centers : np.ndarray
+        Center coordinates for each frame (nframes by 2)
+    max_half_size : int
+        Half-size to use for all frame
+    """
     nframes = data.shape[0]
     cropped_data = np.zeros(
         (nframes, 2 * max_half_size, 2 * max_half_size), dtype=data.dtype
@@ -57,6 +91,23 @@ def crop_to_psf(data, centers, max_half_size):
 
 
 def get_wavelength_arr(filt: str, instrument: str) -> np.ndarray:
+    """
+    Get wavelength array for a given filter
+
+    Array with central wavelength, left and right bounds. Determined by HWHM and an oversize factor (1.1 by default).
+
+    Parameters
+    ----------
+    filt : str
+        Filter name
+    instrument : str
+        Instrument name
+
+    Returns
+    -------
+    np.ndarray
+        Array with the wavelenght, lower bound and upper bound
+    """
     wave_inst, weff_inst = ut.get_wavelengths(instrument)
     wavel = wave_inst[filt]
     hwhm = weff_inst[filt] / 2
@@ -74,6 +125,29 @@ def find_new_badpix(
     med_threshold: float = 50.0,
     med_size: float = 3.0,
 ) -> np.ndarray:
+    """
+    Find new bad pixel by mapping fourier residuals back to image plane
+
+    Parameters
+    ----------
+    frame : np.ndarray
+        Array with a single frame
+    mask : np.ndarray
+        Boolean mask with already known bad pixels
+    support_comp : np.ndarray
+        Complement of fourier support, i.e. where there should not be Fourier signal
+    instrument : str
+        Instrument name
+    med_threshold : float
+        Threshold to use when comparing the median with potential outliers
+    med_size : float
+        Size of median filter used on data
+
+    Returns
+    -------
+    np.ndarray
+        Boolean mask with new bad pixels that were no known before
+    """
     support_comp_data = np.real(np.fft.irfft2(np.fft.rfft2(frame) * support_comp))
     mfil_data = median_filter(frame, size=med_size)
     rn = READ_NOISE[instrument]  # e-
@@ -91,7 +165,25 @@ def find_new_badpix(
     return newdq
 
 
-def get_pupil_mask(pupil: str):
+def get_pupil_mask(pupil: str) -> np.ndarray:
+    """
+    Get pupil mask for a given pupil
+
+    Parameters
+    ----------
+    pupil : str
+        Pupil name
+
+    Returns
+    -------
+    np.ndarray
+        Array defining the pupil mask
+
+    Raises
+    ------
+    ValueError:
+        Raises ValueError if there is no mask with MASK_{pupil} in the pupil directory
+    """
     try:
         pupil_path = Path(PUPIL_DIR) / f"MASK_{pupil}.fits"
         pupil_mask = fits.getdata(pupil_path)
@@ -100,7 +192,21 @@ def get_pupil_mask(pupil: str):
     return pupil_mask
 
 
-def get_psf(wavel: float, pupil: str, fov_px: float, instrument: str):
+def get_psf(wavel: float, pupil: str, fov_px: float, instrument: str) -> np.ndarray:
+    """
+    Get PSF for a pupil via Matrix DFT
+
+    Parameters
+    ----------
+    wavel : float
+        Wavelength at which PSF should be computed
+    pupil : str
+        Pupil name (e.g. CLEAR, CLEARP)
+    fov_px : float
+        Field of view in pixels
+    instrument : str
+        Instrument name
+    """
     # Copied from nis019 (as most of this module)
     reselt = wavel / PUPLDIAM
     pscale_rad = np.deg2rad(pscale[instrument] / 1000 / 3600)
@@ -115,7 +221,15 @@ def get_psf(wavel: float, pupil: str, fov_px: float, instrument: str):
     return image_intensity
 
 
-def transform_image(image):
+def transform_image(image: np.ndarray) -> np.ndarray:
+    """
+    Get fourier transform of a 2D image via matrix DFT
+
+    Parameters
+    ----------
+    image : np.ndarray
+        Array with a 2D image
+    """
     ft = matrixDFT.MatrixFourierTransform()
     ftimage = ft.perform(
         image, image.shape[0], image.shape[0]
@@ -124,7 +238,26 @@ def transform_image(image):
     return np.abs(ftimage)
 
 
-def get_fourier_support(filt, pupil, fov_px, instrument):
+def get_fourier_support(filt: str, pupil: str, fov_px: float, instrument: str) -> np.ndarray:
+    """
+    Get fourier support of the pupil via DFT of the PSF
+
+    Parameters
+    ----------
+    filt : str
+        Filter name
+    pupil : str
+        Pupil name
+    fov_px : float
+        Field of view in pixels
+    instrument : str
+        Instrument name
+
+    Returns
+    -------
+    np.ndarray
+        Array with fourier support of the pupil (MTF)
+    """
     # Get central wavelength and +/- HWHM
     # TODO: Compare speed and results with webbpsf (calc PSF with nlambda=3)
     # currently not a dependency, so only add if significant imporvement
@@ -139,7 +272,24 @@ def get_fourier_support(filt, pupil, fov_px, instrument):
     return psf_transform
 
 
-def fourier_correction(data, mask, support_comp):
+def fourier_correction(data: np.ndarray, mask: np.ndarray, support_comp: np.ndarray) -> np.ndarray:
+    """
+    Perform fourier-plane bad pixel correction
+
+    Parameters
+    ----------
+    data : np.ndarray
+        Image data for a single frame
+    mask : np.ndarray
+        Boolean mask with bad pixels in the frame
+    support_comp : np.ndarray
+        Complement of fourier support (where there should be no signal)
+
+    Returns
+    -------
+    np.ndarray
+        Image data corrected from bad pixels with the fourier method
+    """
     mask_inds = np.where(mask)
     fourier_inds = np.where(support_comp)
 
@@ -190,7 +340,40 @@ def fix_bp_fourier(
     find_new: bool = True,
     new_niter: int = 10,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    # TODO: Gen documentation
+    """
+    Fix bad pixels with the fourier method for a data cube
+
+    Parameters
+    ----------
+    data : np.ndarray
+        Data cube
+    erro : np.ndarray
+        Error cube
+    mask : np.ndarray
+        Boolean mask for bad pixels
+    instrument : str
+        Instrument name
+    pupil : str
+        Pupil name
+    filt : str
+        Filter name
+    crop_frames : bool
+        Crop frames around PSF centers if True (using max possible size based on all frames)
+    find_new : bool
+        Find new bad pixels if True
+    new_niter : int
+        Number of iterations to find new bad pixels
+
+    Returns
+    -------
+    Tuple[np.ndarray, np.ndarray, np.ndarray]
+        Corrected data, corrected error and updated mask
+
+    Raises
+    ------
+    RuntimeError:
+        Raises RuntimeError if subarray is too small to estimate noise
+    """
 
     data = data.copy()
     erro = erro.copy()
@@ -221,9 +404,7 @@ def fix_bp_fourier(
     fact_rad2deg = 180.0 / np.pi
     fact_deg2pix = 1000.0 * 3600.0 / pscale[instrument]
     wave_inst, _ = ut.get_wavelengths(instrument)
-    max_dist = (
-        factor * wave_inst[filt] * 1e-6 / PUPLDIAM * fact_rad2deg * fact_deg2pix
-    )
+    max_dist = factor * wave_inst[filt] * 1e-6 / PUPLDIAM * fact_rad2deg * fact_deg2pix
     pupil_noise_mask = dist > max_dist
     flagged_per_frame = np.sum(mask, axis=(1, 2))
     if np.sum(pupil_noise_mask) < np.mean(flagged_per_frame):
@@ -235,6 +416,10 @@ def fix_bp_fourier(
     if not find_new:
         # If not finding new bad pixels, only do one iteration
         new_niter = 1
+    else:
+        log.warning(
+            "Outlier detection witht he fourier plane bad pixel has not been calibrated for JWST KPI. Use with caution."
+        )
     for i in range(data.shape[0]):
         data_frame = data[i]
         erro_frame = erro[i]
