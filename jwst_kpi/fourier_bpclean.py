@@ -19,11 +19,9 @@ import numpy as np
 from copy import deepcopy
 from poppy import matrixDFT
 
-sys.path.append("/Users/jkammerer/Documents/Code/webbpsf_ext")
-from webbpsf_ext import robust
-
 from . import pupil_data
 PUPIL_DIR = pupil_data.__path__[0]
+from . import robust
 
 
 # =============================================================================
