@@ -32,6 +32,7 @@ from matplotlib.patches import Rectangle
 from scipy.ndimage import median_filter
 from xara import core, kpo
 
+from . import fourier_bpclean
 from . import utils as ut
 from . import pupil_data
 
@@ -73,34 +74,36 @@ del filter_list
 
 # Bad pixel flags.
 # https://jwst-reffiles.stsci.edu/source/data_quality.html
-pxdq_flags = {"DO_NOT_USE": 1,
-              "SATURATED": 2,
-              "JUMP_DET": 4,
-              "DROPOUT": 8,
-              "UNRELIABLE_ERROR": 256,
-              "NON_SCIENCE": 512,
-              "DEAD": 1024,
-              "HOT": 2048,
-              "WARM": 4096,
-              "LOW_QE": 8192,
-              "RC": 16384,
-              "TELEGRAPH": 32768,
-              "NONLINEAR": 65536,
-              "BAD_REF_PIXEL": 131072,
-              "NO_FLAT_FIELD": 262144,
-              "NO_GAIN_VALUE": 524288,
-              "NO_LIN_CORR": 1048576,
-              "NO_SAT_CHECK": 2097152,
-              "UNRELIABLE_BIAS": 4194304,
-              "UNRELIABLE_DARK": 8388608,
-              "UNRELIABLE_SLOPE": 16777216,
-              "UNRELIABLE_FLAT": 33554432,
-              "OPEN": 67108864,
-              "ADJ_OPEN": 134217728,
-              "UNRELIABLE_RESET": 268435456,
-              "MSA_FAILED_OPEN": 536870912,
-              "OTHER_BAD_PIXEL": 1073741824,
-              }
+# pxdq_flags = {"DO_NOT_USE": 1,
+#               "SATURATED": 2,
+#               "JUMP_DET": 4,
+#               "DROPOUT": 8,
+#               "UNRELIABLE_ERROR": 256,
+#               "NON_SCIENCE": 512,
+#               "DEAD": 1024,
+#               "HOT": 2048,
+#               "WARM": 4096,
+#               "LOW_QE": 8192,
+#               "RC": 16384,
+#               "TELEGRAPH": 32768,
+#               "NONLINEAR": 65536,
+#               "BAD_REF_PIXEL": 131072,
+#               "NO_FLAT_FIELD": 262144,
+#               "NO_GAIN_VALUE": 524288,
+#               "NO_LIN_CORR": 1048576,
+#               "NO_SAT_CHECK": 2097152,
+#               "UNRELIABLE_BIAS": 4194304,
+#               "UNRELIABLE_DARK": 8388608,
+#               "UNRELIABLE_SLOPE": 16777216,
+#               "UNRELIABLE_FLAT": 33554432,
+#               "OPEN": 67108864,
+#               "ADJ_OPEN": 134217728,
+#               "UNRELIABLE_RESET": 268435456,
+#               "MSA_FAILED_OPEN": 536870912,
+#               "OTHER_BAD_PIXEL": 1073741824,
+#               }
+from jwst.datamodels import dqflags
+pxdq_flags = dqflags.pixel
 
 # Detector pixel scales.
 # TODO: assumes that NIRISS pixels are square but they are slightly
@@ -487,6 +490,7 @@ class fix_bad_pixels:
         self.bad_bits_allowed = pxdq_flags.keys()
         self.method = "medfilt"
         self.method_allowed = ["medfilt", "fourier"]
+        self.instrume_allowed = ["NIRCAM", "NIRISS", "MIRI"]
 
     def step(self,
              file,
@@ -540,12 +544,48 @@ class fix_bad_pixels:
                 raise UserWarning("List of good frames may only contain integer elements")
             elif np.max(good_frames) >= nf or np.min(good_frames) < nf * (-1):
                 raise UserWarning("Some of the provided good frames are outside the data range")
+        INSTRUME = hdul[0].header["INSTRUME"]
+        if INSTRUME not in self.instrume_allowed:
+            raise UserWarning("Unsupported instrument")
+        FILTER = hdul[0].header["FILTER"]
+        PUPIL = hdul[0].header["PUPIL"]
 
         # Suffix for the file path from the current step.
         suffix_out = "_bpfixed"
 
+        # Get detector pixel scale and position angle.
+        if INSTRUME == "NIRCAM":
+            CHANNEL = hdul[0].header["CHANNEL"]
+            PSCALE = pscale[INSTRUME + "_" + CHANNEL] # mas
+        else:
+            PSCALE = pscale[INSTRUME] # mas
+        V3I_YANG = -hdul["SCI"].header["V3I_YANG"] * hdul["SCI"].header["VPARITY"] # deg, counter-clockwise
+
+        # Check if the filter is known.
+        if INSTRUME == "NIRCAM":
+            filter_allowed = wave_nircam.keys()
+        elif INSTRUME == "NIRISS":
+            filter_allowed = wave_niriss.keys()
+        elif INSTRUME == "MIRI":
+            filter_allowed = wave_miri.keys()
+        if FILTER not in filter_allowed:
+            raise UserWarning("Unknown filter")
+        if PUPIL in filter_allowed:
+            FILTER = PUPIL
+
+        # Get filter properties.
+        if INSTRUME == "NIRCAM":
+            wave = wave_nircam[FILTER] * 1e-6 # m
+            weff = weff_nircam[FILTER] * 1e-6 # m
+        elif INSTRUME == "NIRISS":
+            wave = wave_niriss[FILTER] * 1e-6 # m
+            weff = weff_niriss[FILTER] * 1e-6 # m
+        elif INSTRUME == "MIRI":
+            wave = wave_miri[FILTER] * 1e-6 # m
+            weff = weff_miri[FILTER] * 1e-6 # m
+
         # Make bad pixel map.
-        mask = pxdq < 0
+        mask = np.isnan(data)
         for i in range(len(self.bad_bits)):
             if self.bad_bits[i] not in self.bad_bits_allowed:
                 raise UserWarning("Unknown data quality flag")
@@ -559,9 +599,16 @@ class fix_bad_pixels:
 
         print("--> Found %.0f bad pixels (%.2f%%)" % (np.sum(mask[good_frames]), np.sum(mask[good_frames]) / np.prod(mask[good_frames].shape) * 100.))
 
+        # Simple background subtraction to avoid discontinuity when zero-padding the data in XARA.
+        data_temp = data.copy()
+        data_temp[mask] = np.nan
+        data -= np.nanmedian(data_temp, axis=(1, 2), keepdims=True)
+
         # Fix bad pixels.
         data_bpfixed = data.copy()
+        data_bpfixed[mask] = 0.
         erro_bpfixed = erro.copy()
+        erro_bpfixed[mask] = 0.
         if self.method not in self.method_allowed:
             raise UserWarning("Unknown bad pixel cleaning method")
         else:
@@ -571,7 +618,11 @@ class fix_bad_pixels:
                         data_bpfixed[i][mask[i]] = median_filter(data_bpfixed[i], size=5)[mask[i]]
                         erro_bpfixed[i][mask[i]] = median_filter(erro_bpfixed[i], size=5)[mask[i]]
             elif self.method == "fourier":
-                raise NotImplementedError("Fourier bad pixel cleaning method not implemented yet")
+                for i in range(nf):
+                    if good_frames is None or i in good_frames or (nf - i) * (-1) in good_frames:
+                        data_bpfixed[i], mask[i] = fourier_bpclean.run(data_bpfixed[i], mask[i], INSTRUME, FILTER, PUPIL, PSCALE, wave, weff, find_new=True)
+                        # erro_bpfixed[i] = fourier_bpclean.run(erro_bpfixed[i], mask[i], INSTRUME, FILTER, PUPIL, PSCALE, wave, weff, find_new=False)
+                        erro_bpfixed[i][mask[i]] = median_filter(erro_bpfixed[i], size=5)[mask[i]]
 
         # Get output file path.
         path = ut.get_output_base(file, output_dir=output_dir)
@@ -737,6 +788,7 @@ class recenter_frames:
         if INSTRUME not in self.instrume_allowed:
             raise UserWarning("Unsupported instrument")
         FILTER = hdul[0].header["FILTER"]
+        PUPIL = hdul[0].header["PUPIL"]
 
         # Suffix for the file path from the current step.
         suffix_out = "_recentered"
@@ -763,6 +815,8 @@ class recenter_frames:
                 filter_allowed = wave_miri.keys()
             if FILTER not in filter_allowed:
                 raise UserWarning("Unknown filter")
+            if PUPIL in filter_allowed:
+                FILTER = PUPIL
 
             # Get pupil model path and filter properties.
             if INSTRUME == "NIRCAM":
@@ -816,7 +870,7 @@ class recenter_frames:
                 array=None,
                 ndgt=5,
                 bmax=self.bmax,
-                hexa=False,
+                hexa=True,
                 ID="",
             )
             m2pix = core.mas2rad(PSCALE) * sx / wave
@@ -1276,6 +1330,7 @@ class extract_kerphase:
         if INSTRUME not in self.instrume_allowed:
             raise UserWarning("Unsupported instrument")
         FILTER = hdul[0].header["FILTER"]
+        PUPIL = hdul[0].header["PUPIL"]
 
         # Suffix for the file path from the current step.
         suffix_out = "_kpfits"
@@ -1297,6 +1352,8 @@ class extract_kerphase:
             filter_allowed = wave_miri.keys()
         if FILTER not in filter_allowed:
             raise UserWarning("Unknown filter")
+        if PUPIL in filter_allowed:
+            FILTER = PUPIL
 
         # Get pupil model path and filter properties.
         if INSTRUME == "NIRCAM":
@@ -1350,7 +1407,7 @@ class extract_kerphase:
             array=None,
             ndgt=5,
             bmax=self.bmax,
-            hexa=False,
+            hexa=True,
             ID="",
         )
         m2pix = core.mas2rad(PSCALE) * sx / wave
