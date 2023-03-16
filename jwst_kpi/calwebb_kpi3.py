@@ -324,22 +324,21 @@ class trim_frames:
 
         print("--> Trimming frames around (x, y) = (%.0f, %.0f) to a size of %.0fx%.0f pixels" % (ww_max[1], ww_max[0], 2 * self.trim_halfsize, 2 * self.trim_halfsize))
 
-        for i in range(nf):
-            data_trimmed = data[
-                :,
-                ww_max[0] - self.trim_halfsize : ww_max[0] + self.trim_halfsize,
-                ww_max[1] - self.trim_halfsize : ww_max[1] + self.trim_halfsize,
-            ].copy()
-            erro_trimmed = erro[
-                :,
-                ww_max[0] - self.trim_halfsize : ww_max[0] + self.trim_halfsize,
-                ww_max[1] - self.trim_halfsize : ww_max[1] + self.trim_halfsize,
-            ].copy()
-            pxdq_trimmed = pxdq[
-                :,
-                ww_max[0] - self.trim_halfsize : ww_max[0] + self.trim_halfsize,
-                ww_max[1] - self.trim_halfsize : ww_max[1] + self.trim_halfsize,
-            ].copy()
+        data_trimmed = data[
+            :,
+            ww_max[0] - self.trim_halfsize : ww_max[0] + self.trim_halfsize,
+            ww_max[1] - self.trim_halfsize : ww_max[1] + self.trim_halfsize,
+        ].copy()
+        erro_trimmed = erro[
+            :,
+            ww_max[0] - self.trim_halfsize : ww_max[0] + self.trim_halfsize,
+            ww_max[1] - self.trim_halfsize : ww_max[1] + self.trim_halfsize,
+        ].copy()
+        pxdq_trimmed = pxdq[
+            :,
+            ww_max[0] - self.trim_halfsize : ww_max[0] + self.trim_halfsize,
+            ww_max[1] - self.trim_halfsize : ww_max[1] + self.trim_halfsize,
+        ].copy()
 
         # Get output file path.
         path = ut.get_output_base(file, output_dir=output_dir)
