@@ -490,6 +490,8 @@ class fix_bad_pixels:
         self.method = "medfilt"
         self.method_allowed = ["medfilt", "fourier"]
         self.instrume_allowed = ["NIRCAM", "NIRISS", "MIRI"]
+        self.do_bg_sub = True
+        self.temp_sig_thresh = None
 
     def step(self,
              file,
@@ -599,9 +601,23 @@ class fix_bad_pixels:
         print("--> Found %.0f bad pixels (%.2f%%)" % (np.sum(mask[good_frames]), np.sum(mask[good_frames]) / np.prod(mask[good_frames].shape) * 100.))
 
         # Simple background subtraction to avoid discontinuity when zero-padding the data in XARA.
-        data_temp = data.copy()
-        data_temp[mask] = np.nan
-        data -= np.nanmedian(data_temp, axis=(1, 2), keepdims=True)
+        if self.do_bg_sub:
+            data_temp = data.copy()
+            data_temp[mask] = np.nan
+            data -= np.nanmedian(data_temp, axis=(1, 2), keepdims=True)
+
+        # Find new bad pixels based on temporal evolution.
+        if self.temp_sig_thresh is not None:
+            nf_good = nf if good_frames is None else len(good_frames)
+            if nf_good >= 3:
+                if good_frames is None:
+                    data_med = np.nanmedian(data, axis=0)
+                    data_std = np.nanstd(data, axis=0)
+                else:
+                    data_med = np.nanmedian(data[good_frames], axis=0)
+                    data_std = np.nanstd(data[good_frames], axis=0)
+                mask[data > data_med + self.temp_sig_thresh * data_std] = 1
+                mask[data < data_med - self.temp_sig_thresh * data_std] = 1
 
         # Fix bad pixels.
         data_bpfixed = data.copy()
@@ -1531,7 +1547,13 @@ class extract_kerphase:
                 bbox=dict(facecolor="white", edgecolor="lightgrey", boxstyle="round"),
             )
             ww = np.argsort(KPO.kpi.BLEN)
-            ax[1, 0].plot(np.angle(KPO.CVIS[0][0, ww]))
+            # ax[1, 0].plot(np.angle(KPO.CVIS[0][0, ww]))
+            temp = np.angle(np.array(KPO.CVIS))
+            medfp = np.median(temp, axis=(0, 1))
+            minfp = np.min(temp, axis=(0, 1))
+            maxfp = np.max(temp, axis=(0, 1))
+            ax[1, 0].plot(medfp[ww])
+            ax[1, 0].fill_between(np.arange(len(medfp)), minfp[ww], maxfp[ww], alpha=1. / 3.)
             ax[1, 0].axhline(0., ls="--", color="black")
             ax[1, 0].set_ylim([-np.pi, np.pi])
             ax[1, 0].grid(axis="y")
@@ -1543,8 +1565,14 @@ class extract_kerphase:
                 pad=-20,
                 bbox=dict(facecolor="white", edgecolor="lightgrey", boxstyle="round"),
             )
-            ax[1, 1].errorbar(np.arange(KPO.KPDT[0][0, :].shape[0]), KPO.KPDT[0][0, :], yerr=kpsig[0], color=colors[0], alpha=1. / 3.)
-            ax[1, 1].plot(np.arange(KPO.KPDT[0][0, :].shape[0]), KPO.KPDT[0][0, :], color=colors[0])
+            # ax[1, 1].errorbar(np.arange(KPO.KPDT[0][0, :].shape[0]), KPO.KPDT[0][0, :], yerr=kpsig[0], color=colors[0], alpha=1. / 3.)
+            # ax[1, 1].plot(np.arange(KPO.KPDT[0][0, :].shape[0]), KPO.KPDT[0][0, :], color=colors[0])
+            temp = np.array(KPO.KPDT)
+            medkp = np.median(temp, axis=(0, 1))
+            minkp = np.min(temp, axis=(0, 1))
+            maxkp = np.max(temp, axis=(0, 1))
+            ax[1, 1].plot(medkp)
+            ax[1, 1].fill_between(np.arange(len(medkp)), minkp, maxkp, alpha=1. / 3.)
             ax[1, 1].axhline(0., ls="--", color="black")
             ylim = ax[1, 1].get_ylim()
             ax[1, 1].set_ylim([-np.max(np.abs(ylim)), np.max(np.abs(ylim))])
