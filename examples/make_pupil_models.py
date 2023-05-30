@@ -38,6 +38,7 @@ def create_hex_model(
     aper: np.ndarray,
     pscale: float,
     ns: int = 3,
+    # ns: int = 2,
     sdiam: float = 1.32,
 ) -> Tuple[np.ndarray]:
     """
@@ -315,6 +316,7 @@ if __name__ == "__main__":
             symmetrize=False,
             rot_ang=0.56126717,
             min_red=1,
+            # min_red=0,
             hex_grid=True,
             out_plot=output_dir / "niriss_nrm_pupil.pdf",
             out_fits=output_dir / "niriss_nrm_pupil.fits",
@@ -336,6 +338,7 @@ if __name__ == "__main__":
     }
 
     models = [nircam_clear_dict, nircam_rnd_dict, nircam_bar_dict, niriss_clear_dict, niriss_nrm_dict, miri_clear_dict]
+    # models = [niriss_nrm_dict]
 
     for model in models:
         KPI = generate_pupil_model(**model)

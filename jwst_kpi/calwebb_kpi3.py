@@ -1426,8 +1426,10 @@ class extract_kerphase:
             ID="",
         )
         m2pix = core.mas2rad(PSCALE) * sx / wave
-        # KPO.kpi.plot_pupil_and_uv()
+        # KPO.kpi.filter_baselines(np.abs(KPO.kpi.UVC[:, 1]) < 4.75)
+        # KPO.kpi.plot_pupil_and_uv(cmap='viridis')
         # plt.show()
+        # import pdb; pdb.set_trace()
 
         # Recenter frames, window frames, and extract kernel phase.
         if recenter_frames_obj.skip and window_frames_obj.skip:
