@@ -40,6 +40,8 @@ or directly with `pip` from the GitHub repository:
 python -m pip install git+https://github.com/kammerje/jwst-kpi
 ```
 
+**NOTE: With the development version, if you have errors about datamodels, please re-install the package with pip**
+
 ## Usage
 
 Examples of how to use the pipeline are
