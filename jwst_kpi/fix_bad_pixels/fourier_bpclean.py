@@ -19,7 +19,7 @@ import numpy as np
 from copy import deepcopy
 from poppy import matrixDFT
 
-from . import pupil_data
+from .. import pupil_data
 PUPIL_DIR = pupil_data.__path__[0]
 from . import robust
 
