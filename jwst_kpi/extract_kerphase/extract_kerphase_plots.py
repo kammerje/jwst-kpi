@@ -78,7 +78,7 @@ def plot_kerphase(data, KPO, m2pix, kpcor, kpsig, good_frames=None):
         pad=-20,
         bbox=dict(facecolor="white", edgecolor="lightgrey", boxstyle="round"),
     )
-    ax[1, 1].errorbar(
+    # ax[1, 1].errorbar(
     #     np.arange(KPO.KPDT[0][0, :].shape[0]),
     #     KPO.KPDT[0][0, :],
     #     yerr=kpsig[0],
