@@ -129,23 +129,21 @@ class TrimFramesStep(Step):
             % (ww_max[1], ww_max[0], 2 * self.trim_halfsize, 2 * self.trim_halfsize)
         )
 
-        # TODO: Unused loop?? (repeating vectorized code)
-        for i in range(nf):
-            data_trimmed = data[
-                :,
-                ww_max[0] - self.trim_halfsize : ww_max[0] + self.trim_halfsize,
-                ww_max[1] - self.trim_halfsize : ww_max[1] + self.trim_halfsize,
-            ].copy()
-            erro_trimmed = erro[
-                :,
-                ww_max[0] - self.trim_halfsize : ww_max[0] + self.trim_halfsize,
-                ww_max[1] - self.trim_halfsize : ww_max[1] + self.trim_halfsize,
-            ].copy()
-            pxdq_trimmed = pxdq[
-                :,
-                ww_max[0] - self.trim_halfsize : ww_max[0] + self.trim_halfsize,
-                ww_max[1] - self.trim_halfsize : ww_max[1] + self.trim_halfsize,
-            ].copy()
+        data_trimmed = data[
+            :,
+            ww_max[0] - self.trim_halfsize : ww_max[0] + self.trim_halfsize,
+            ww_max[1] - self.trim_halfsize : ww_max[1] + self.trim_halfsize,
+        ].copy()
+        erro_trimmed = erro[
+            :,
+            ww_max[0] - self.trim_halfsize : ww_max[0] + self.trim_halfsize,
+            ww_max[1] - self.trim_halfsize : ww_max[1] + self.trim_halfsize,
+        ].copy()
+        pxdq_trimmed = pxdq[
+            :,
+            ww_max[0] - self.trim_halfsize : ww_max[0] + self.trim_halfsize,
+            ww_max[1] - self.trim_halfsize : ww_max[1] + self.trim_halfsize,
+        ].copy()
 
         # NOTE: This is duplicated in all methods
         mk_path = self.make_output_path()
