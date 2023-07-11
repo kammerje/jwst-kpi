@@ -132,9 +132,10 @@ class ExtractKerphaseStep(Step):
         if INSTRUME not in self.instrume_allowed:
             raise UserWarning("Unsupported instrument")
         FILTER = input_models.meta.instrument.filter
+        pupil_name = input_models.meta.instrument.pupil
 
         # Get detector pixel scale and position angle.
-        # TODO: Dup code with recentering step
+        # TODO: Dup code with recentering and badpix step
         if INSTRUME == "NIRCAM":
             CHANNEL = input_models.meta.instrument.channel
             PSCALE = pscale[INSTRUME + "_" + CHANNEL]  # mas
@@ -153,10 +154,11 @@ class ExtractKerphaseStep(Step):
             filter_allowed = wave_miri.keys()
         if FILTER not in filter_allowed:
             raise UserWarning("Unknown filter")
+        if pupil_name in filter_allowed:
+            FILTER = pupil_name
 
         # TODO: Dup code lasts until this next block (inclusively)
         # Get pupil model path and filter properties.
-        pupil_name = input_models.meta.instrument.pupil
         if INSTRUME == "NIRCAM":
             if self.pupil_path is None:
                 if pupil_name == "MASKRND":
