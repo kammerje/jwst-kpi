@@ -210,7 +210,7 @@ class ExtractKerphaseStep(Step):
             array=None,
             ndgt=5,
             bmax=self.bmax,
-            hexa=False,
+            hexa=True,
             ID="",
         )
         m2pix = core.mas2rad(PSCALE) * sx / wave
