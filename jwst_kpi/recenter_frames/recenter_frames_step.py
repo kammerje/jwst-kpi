@@ -105,6 +105,7 @@ class RecenterFramesStep(Step):
         if INSTRUME not in self.instrume_allowed:
             raise UserWarning("Unsupported instrument")
         FILTER = input_models.meta.instrument.filter
+        pupil_name = input_models.meta.instrument.pupil
 
         # Simple background subtraction to avoid discontinuity when zero-padding the data in XARA.
         data -= np.median(data, axis=(1, 2), keepdims=True)
@@ -130,6 +131,8 @@ class RecenterFramesStep(Step):
                 filter_allowed = wave_miri.keys()
             if FILTER not in filter_allowed:
                 raise UserWarning("Unknown filter")
+            if pupil_name in filter_allowed:
+                FILTER = pupil_name
 
             # Get pupil model path and filter properties.
             pupil_name = input_models.meta.instrument.pupil
