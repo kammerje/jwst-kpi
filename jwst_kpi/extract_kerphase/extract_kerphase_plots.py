@@ -60,7 +60,13 @@ def plot_kerphase(data, KPO, m2pix, kpcor, kpsig, good_frames=None):
         bbox=dict(facecolor="white", edgecolor="lightgrey", boxstyle="round"),
     )
     ww = np.argsort(KPO.kpi.BLEN)
-    ax[1, 0].plot(np.angle(KPO.CVIS[0][0, ww]))
+    # ax[1, 0].plot(np.angle(KPO.CVIS[0][0, ww]))
+    temp = np.angle(np.array(KPO.CVIS))
+    medfp = np.median(temp, axis=(0, 1))
+    minfp = np.min(temp, axis=(0, 1))
+    maxfp = np.max(temp, axis=(0, 1))
+    ax[1, 0].plot(medfp[ww])
+    ax[1, 0].fill_between(np.arange(len(medfp)), minfp[ww], maxfp[ww], alpha=1. / 3.)
     ax[1, 0].axhline(0.0, ls="--", color="black")
     ax[1, 0].set_ylim([-np.pi, np.pi])
     ax[1, 0].grid(axis="y")
@@ -73,17 +79,23 @@ def plot_kerphase(data, KPO, m2pix, kpcor, kpsig, good_frames=None):
         bbox=dict(facecolor="white", edgecolor="lightgrey", boxstyle="round"),
     )
     ax[1, 1].errorbar(
-        np.arange(KPO.KPDT[0][0, :].shape[0]),
-        KPO.KPDT[0][0, :],
-        yerr=kpsig[0],
-        color=colors[0],
-        alpha=1.0 / 3.0,
-    )
-    ax[1, 1].plot(
-        np.arange(KPO.KPDT[0][0, :].shape[0]),
-        KPO.KPDT[0][0, :],
-        color=colors[0],
-    )
+    #     np.arange(KPO.KPDT[0][0, :].shape[0]),
+    #     KPO.KPDT[0][0, :],
+    #     yerr=kpsig[0],
+    #     color=colors[0],
+    #     alpha=1.0 / 3.0,
+    # )
+    # ax[1, 1].plot(
+    #     np.arange(KPO.KPDT[0][0, :].shape[0]),
+    #     KPO.KPDT[0][0, :],
+    #     color=colors[0],
+    # )
+    temp = np.array(KPO.KPDT)
+    medkp = np.median(temp, axis=(0, 1))
+    minkp = np.min(temp, axis=(0, 1))
+    maxkp = np.max(temp, axis=(0, 1))
+    ax[1, 1].plot(medkp)
+    ax[1, 1].fill_between(np.arange(len(medkp)), minkp, maxkp, alpha=1. / 3.)
     ax[1, 1].axhline(0.0, ls="--", color="black")
     ylim = ax[1, 1].get_ylim()
     ax[1, 1].set_ylim([-np.max(np.abs(ylim)), np.max(np.abs(ylim))])
