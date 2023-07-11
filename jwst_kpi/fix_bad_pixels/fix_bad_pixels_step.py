@@ -10,6 +10,9 @@ from scipy.ndimage import median_filter
 from .. import utils as ut
 from ..datamodels import BadPixCubeModel, BadPixImageModel
 from .fix_bad_pixels_plots import plot_badpix
+from . import fourier_bpclean
+from ..constants import (gain, pscale, wave_miri, wave_nircam, wave_niriss,
+                         weff_miri, weff_nircam, weff_niriss, DIAM)
 
 
 class FixBadPixelsStep(Step):
@@ -39,6 +42,14 @@ class FixBadPixelsStep(Step):
     method_allowed : List[str]
         Bad pixel correction methods allowed.
         Default ['medfilt', 'fourier'] should not be changed by users.
+    instrume_allowed : List[str]
+        Instruments available with this step.
+        Default ['NIRCAM', 'NIRISS', 'MIRI'] should not be changed by users.
+    do_bg_sub : bool
+        Do simple background subtraction to avoid FT discontinuities when zero-padding.
+    temp_sig_thresh : Optional[float]
+        Number of sigmas to use for temporal bad outlier identification.
+        None by default, i.e. the temporal identification is skipped.
     bad_bits_allowed : Optional[List[str]]
         List of values allowed for "bad_bits" attribute.
         Default list imported from JWST pipeline.
@@ -52,8 +63,11 @@ class FixBadPixelsStep(Step):
         previous_suffix = string(default=None)
         bad_bits = string_list(default=list('DO_NOT_USE'))
         method_allowed = string_list(default=list('medfilt', 'fourier'))
+        instrume_allowed = string_list(default=list('NIRCAM', 'NIRISS', 'MIRI'))
         bad_bits_allowed = string_list(default=None)
         show_plots = boolean(default=False)
+        do_bg_sub = boolean(default=True)
+        temp_sig_thresh = float(default=None)
         good_frames = int_list(default=None)
     """
 
@@ -96,8 +110,48 @@ class FixBadPixelsStep(Step):
                     "Some of the provided good frames are outside the data range"
                 )
 
+
+        # Get observing setup info from data model
+        pupil_name = input_models.meta.instrument.pupil
+        INSTRUME = input_models.meta.instrument.name
+        if INSTRUME not in self.instrume_allowed:
+            raise ValueError("Unsupported instrument")
+        FILTER = input_models.meta.instrument.filter
+
+        # Get detector pixel scale and PA
+        # TODO: Dup code with extract and badpix step
+        if INSTRUME == "NIRCAM":
+            CHANNEL = input_models.meta.instrument.channel
+            PSCALE = pscale[INSTRUME + "_" + CHANNEL]  # mas
+        else:
+            PSCALE = pscale[INSTRUME]  # mas
+
+
+        # Check if the filter is known.
+        if INSTRUME == "NIRCAM":
+            filter_allowed = wave_nircam.keys()
+        elif INSTRUME == "NIRISS":
+            filter_allowed = wave_niriss.keys()
+        elif INSTRUME == "MIRI":
+            filter_allowed = wave_miri.keys()
+        if FILTER not in filter_allowed:
+            raise UserWarning("Unknown filter")
+        if pupil_name in filter_allowed:
+            FILTER = pupil_name
+
+        # Get filter properties.
+        if INSTRUME == "NIRCAM":
+            wave = wave_nircam[FILTER] * 1e-6 # m
+            weff = weff_nircam[FILTER] * 1e-6 # m
+        elif INSTRUME == "NIRISS":
+            wave = wave_niriss[FILTER] * 1e-6 # m
+            weff = weff_niriss[FILTER] * 1e-6 # m
+        elif INSTRUME == "MIRI":
+            wave = wave_miri[FILTER] * 1e-6 # m
+            weff = weff_miri[FILTER] * 1e-6 # m
+
         # Make bad pixel map.
-        mask = pxdq < 0
+        mask = np.isnan(data)
         for i in range(len(self.bad_bits)):
             if self.bad_bits[i] not in bad_bits_allowed:
                 raise UserWarning("Unknown data quality flag")
@@ -117,9 +171,30 @@ class FixBadPixelsStep(Step):
             )
         )
 
+        # Simple background subtraction to avoid discontinuity when zero-padding the data in XARA.
+        if self.do_bg_sub:
+            data_temp = data.copy()
+            data_temp[mask] = np.nan
+            data -= np.nanmedian(data_temp, axis=(1, 2), keepdims=True)
+
+        # Find new bad pixels based on temporal evolution.
+        if self.temp_sig_thresh is not None:
+            nf_good = nf if good_frames is None else len(good_frames)
+            if nf_good >= 3:
+                if good_frames is None:
+                    data_med = np.nanmedian(data, axis=0)
+                    data_std = np.nanstd(data, axis=0)
+                else:
+                    data_med = np.nanmedian(data[good_frames], axis=0)
+                    data_std = np.nanstd(data[good_frames], axis=0)
+                mask[data > data_med + self.temp_sig_thresh * data_std] = 1
+                mask[data < data_med - self.temp_sig_thresh * data_std] = 1
+
         # Fix bad pixels.
         data_bpfixed = data.copy()
+        data_bpfixed[mask] = 0.
         erro_bpfixed = erro.copy()
+        erro_bpfixed[mask] = 0.
         if self.method not in self.method_allowed:
             raise UserWarning("Unknown bad pixel cleaning method")
         else:
@@ -137,9 +212,25 @@ class FixBadPixelsStep(Step):
                             erro_bpfixed[i], size=5
                         )[mask[i]]
             elif self.method == "fourier":
-                raise NotImplementedError(
-                    "Fourier bad pixel cleaning method not implemented yet"
-                )
+                for i in range(nf):
+                    if (
+                        good_frames is None
+                        or i in good_frames
+                        or (nf - i) * (-1) in good_frames
+                    ):
+                        data_bpfixed[i], mask[i] = fourier_bpclean.run(
+                            data_bpfixed[i],
+                            mask[i],
+                            INSTRUME,
+                            FILTER,
+                            pupil_name,
+                            PSCALE,
+                            wave,
+                            weff,
+                            find_new=True,
+                        )
+                        # erro_bpfixed[i] = fourier_bpclean.run(erro_bpfixed[i], mask[i], INSTRUME, FILTER, PUPIL, PSCALE, wave, weff, find_new=False)
+                        erro_bpfixed[i][mask[i]] = median_filter(erro_bpfixed[i], size=5)[mask[i]]
 
         # Get output file path.
         # path = ut.get_output_base(file, output_dir=output_dir)
