@@ -380,6 +380,9 @@ class ExtractKerphaseStep(Step):
         # hdu_uvp.header["TTYPE3"] = ("RED", "Baseline redundancy (int)")
         output_models.ker_mat = KPO.kpi.KPM
         output_models.blm_mat = np.diag(KPO.kpi.RED).dot(KPO.kpi.TFM)
+        # NOTE: The dimension is [NF, NWL(1), NKP] already
+        # because extraction is done in an external loop with xara
+        # (the shape is different from typical "extract_single_cube" output)
         output_models.kp_data = np.array(KPO.KPDT)  # rad
         output_models.kp_sigm = kpsig[:, np.newaxis, :]  # rad
         output_models.kp_cov = kpcov[:, np.newaxis, :]  # rad^2
