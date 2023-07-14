@@ -1,0 +1,39 @@
+%YAML 1.1
+---
+$schema: "http://stsci.edu/schemas/fits-schema/fits-schema"
+id: "http://stsci.edu/schemas/jwst_kpi_datamodel/windowcube.schema"
+allOf:
+# NOTE: Not sure need to include all of this (except for cube, but not taking chances)
+- $ref: http://stsci.edu/schemas/jwst_datamodel/cube.schema
+- $ref: http://stsci.edu/schemas/jwst_datamodel/bunit.schema
+- $ref: http://stsci.edu/schemas/jwst_datamodel/photometry.schema
+- $ref: http://stsci.edu/schemas/jwst_datamodel/wcsinfo.schema
+- $ref: kpicore.schema
+- type: object
+  properties:
+    data_org:
+      title: Original science cube (pre-windowing)
+      fits_hdu: SCI-ORG
+      default: 0.0
+      ndim: 3
+      datatype: float32
+    err_org:
+      title: Original error cube (pre-windowing)
+      fits_hdu: ERR-ORG
+      default: 0.0
+      ndim: 3
+      datatype: float32
+    dq_mod:
+      title: DQ Mask from bp fix
+      fits_hdu: DQ-MOD
+      default: 0
+      ndim: 3
+      datatype: uint32
+    sgmask:
+      title: Super-Gaussian mask used for windowing
+      fits_hdu: WINMASK
+      default: 0.0
+      ndim: 2
+      datatype: float32
+- $ref: http://stsci.edu/schemas/jwst_datamodel/int_times.schema
+- $ref: http://stsci.edu/schemas/jwst_datamodel/variance.schema
