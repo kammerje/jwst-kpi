@@ -92,8 +92,8 @@ def generate_pupil_model(
     nrings: int = 3,
     binary: bool = False,
     symmetrize: bool = False,
-    cut: float = 0.1,
     pad: int = 70,
+    symmetrize_cut: float = 0.1,
     rot_ang: float = 0.0,
     bmax: float = None,
     min_red: float = 10.0,
@@ -105,6 +105,7 @@ def generate_pupil_model(
     out_fits: Optional[Union[Path, str]] = None,
 ):
     return_tmp: bool = False,
+    cut: Optional[float] = None,
 ) -> kpi.KPI | tuple[kpi.KPI, np.ndarray]:
     """
     Generate pupil model for a set of parameters with XARA.
@@ -128,9 +129,9 @@ def generate_pupil_model(
     symmetrize : bool
         Symmetrize the model along the horizontal direction.
     pad : int
-    cut : float
         Pad the input FITS mask. Required for hexagonal grid to avoid wrapping the transmission calculation.
         70 is the minimum required value for ns=1. 50 should be enough for ns=3
+    symmetrize_cut : float
         Cutoff distance when symmetrizing model (must be < step size).
     rot_ang : float
         Rotation angle for the model.
@@ -191,10 +192,20 @@ def generate_pupil_model(
         model = create_discrete_model(aper, pxsc, step, binary=binary, tmin=tmin)
         tmp = None
 
+    if cut is not None:
+        warnings.warn(
+            "cut has been replaced by symmetrize_cut and will be removed in the future."
+            " Setting symmetrize_cut to cut value.",
+            DeprecationWarning,
+        )
+        symmetrize_cut = cut
+
     if symmetrize:
-        # TODO: Should this check against cut instead?
-        if step <= 0.1:
-            warnings.warn(f"Symmetrize cut parameter ({cut}) should be smaller than step ({step})")
+        if step <= cut:
+            warnings.warn(
+                f"Symmetrize cut parameter ({symmetrize}) should be smaller than step ({step})",
+                RuntimeWarning,
+            )
         model = symetrizes_model(model, cut=cut)
 
     if np.abs(rot_ang) > 0.0:
