@@ -13,7 +13,6 @@ from xaosim.pupil import hex_mirror_model, uniform_hex
 from jwst_kpi import PUPIL_DIR
 
 
-
 def create_hex_model(
     aper: np.ndarray,
     pscale: float,
@@ -55,7 +54,7 @@ def create_hex_model(
     # x, y coordinates for the discrete model
     coords = hex_mirror_model(2, ns, sdiam, fill=False)
     coords = np.unique(np.round(coords, 3), axis=1)
-    nc = coords.shape[1] # number of potential subaperture coordinates
+    nc = coords.shape[1]  # number of potential subaperture coordinates
 
     # appending a column for the transmission
     tcoords = np.ones((3, nc))
@@ -67,7 +66,6 @@ def create_hex_model(
     tmp = aper.copy()
 
     for ii in range(nc):
-
         # get coords of one subaperture in the grid
         sx, sy = np.round(tcoords[:2, ii] / pscale).astype(int)
 
@@ -157,7 +155,9 @@ def generate_pupil_model(
     """
 
     pupil_dir = Path(PUPIL_DIR)
-    available_masks = [f.stem.split("_")[1] for f in pupil_dir.iterdir() if f.stem.startswith("MASK")]
+    available_masks = [
+        f.stem.split("_")[1] for f in pupil_dir.iterdir() if f.stem.startswith("MASK")
+    ]
     mask_found = input_mask in available_masks
     if mask_found:
         input_mask_path = pupil_dir / f"MASK_{input_mask}.fits"
@@ -165,11 +165,13 @@ def generate_pupil_model(
         input_mask_path = Path(input_mask)
         mask_found = input_mask_path.is_file()
     if not mask_found:
-        raise ValueError(f"Input FITS mask must be one of: {available_masks} or a valid full path.")
+        raise ValueError(
+            f"Input FITS mask must be one of: {available_masks} or a valid full path."
+        )
 
     with pyfits.open(input_mask_path) as hdul:
         aper = hdul[0].data
-        pxsc = hdul[0].header["PUPLSCAL"] # m; pupil scale
+        pxsc = hdul[0].header["PUPLSCAL"]  # m; pupil scale
     aper = aper[:-1, :-1]
     aper = shift(aper, (-0.5, -0.5))
 
@@ -188,11 +190,14 @@ def generate_pupil_model(
             warnings.warn(f"Symmetrize cut parameter ({cut}) should be smaller than step ({step})")
         model = symetrizes_model(model, cut=cut)
 
-    if np.abs(rot_ang) > 0.:
-        th0 = rot_ang * np.pi / 180. # rad; rotation angle
-        rot_mat = np.array([[np.cos(th0), -np.sin(th0)],
-                            [np.sin(th0),  np.cos(th0)]]) # rotation matrix
-        model[:, :2] = model[:, :2].dot(rot_mat) # rotated model = model * rotation matrix
+    if np.abs(rot_ang) > 0.0:
+        th0 = rot_ang * np.pi / 180.0  # rad; rotation angle
+        rot_mat = np.array(
+            [[np.cos(th0), -np.sin(th0)], [np.sin(th0), np.cos(th0)]]
+        )  # rotation matrix
+        model[:, :2] = model[:, :2].dot(
+            rot_mat
+        )  # rotated model = model * rotation matrix
         if hex_grid:
             tmp = rotate(tmp, rot_ang, reshape=False, order=1)
 
