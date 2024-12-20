@@ -92,8 +92,8 @@ def generate_pupil_model(
     nrings: int = 3,
     binary: bool = False,
     symmetrize: bool = False,
-    pad: int = 50,
     cut: float = 0.1,
+    pad: int = 70,
     rot_ang: float = 0.0,
     bmax: float = None,
     min_red: float = 10.0,
@@ -126,8 +126,9 @@ def generate_pupil_model(
     symmetrize : bool
         Symmetrize the model along the horizontal direction.
     pad : int
-        Pad the input FITS mask.
     cut : float
+        Pad the input FITS mask. Required for hexagonal grid to avoid wrapping the transmission calculation.
+        70 is the minimum required value for ns=1. 50 should be enough for ns=3
         Cutoff distance when symmetrizing model (must be < step size).
     rot_ang : float
         Rotation angle for the model.
@@ -176,7 +177,6 @@ def generate_pupil_model(
     aper = shift(aper, (-0.5, -0.5))
 
     if pad > 0:
-        # TODO: Check that default padding is sufficient even for ns=1
         aper = np.pad(aper, ((pad, pad), (pad, pad)))
 
     if hex_grid:
