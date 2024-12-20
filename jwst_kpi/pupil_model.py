@@ -104,6 +104,8 @@ def generate_pupil_model(
     out_txt: Optional[Union[Path, str]] = None,
     out_fits: Optional[Union[Path, str]] = None,
 ):
+    return_tmp: bool = False,
+) -> kpi.KPI | tuple[kpi.KPI, np.ndarray]:
     """
     Generate pupil model for a set of parameters with XARA.
 
@@ -148,6 +150,8 @@ def generate_pupil_model(
         Output path for pupil model text file.
     out_fits : Optional[Union[Path, str]]
         Output path for pupil model FITS file.
+    return_tmp:
+        Return the temporary transmission mask used to generate the model
 
     Returns
     -------
@@ -185,6 +189,7 @@ def generate_pupil_model(
         if step is None:
             raise TypeError("step must be provided for square grid (hex_grid=False).")
         model = create_discrete_model(aper, pxsc, step, binary=binary, tmin=tmin)
+        tmp = None
 
     if symmetrize:
         # TODO: Should this check against cut instead?
@@ -237,4 +242,7 @@ def generate_pupil_model(
             plt.show(block=True)
         plt.close()
 
-    return KPI
+    if return_tmp:
+        return KPI, tmp
+    else:
+        return KPI
