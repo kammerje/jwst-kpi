@@ -199,10 +199,10 @@ def generate_pupil_model(
     if symmetrize:
         if step <= cut:
             warnings.warn(
-                f"Symmetrize cut parameter ({symmetrize}) should be smaller than step ({step})",
+                f"Symmetrize cut parameter ({symmetrize_cut}) should be smaller than step ({step})",
                 RuntimeWarning,
             )
-        model = symetrizes_model(model, cut=cut)
+        model = symetrizes_model(model, cut=symmetrize_cut)
 
     if np.abs(rot_ang) > 0.0:
         th0 = rot_ang * np.pi / 180.0  # rad; rotation angle
