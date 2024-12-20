@@ -101,9 +101,7 @@ def generate_pupil_model(
     hex_grid: bool = False,
     show: bool = True,
     out_plot: Optional[Union[Path, str]] = None,
-    out_txt: Optional[Union[Path, str]] = None,
     out_fits: Optional[Union[Path, str]] = None,
-):
     return_tmp: bool = False,
     cut: Optional[float] = None,
 ) -> kpi.KPI | tuple[kpi.KPI, np.ndarray]:
@@ -147,8 +145,6 @@ def generate_pupil_model(
         Show pupil model and uv-coverage.
     out_plot : Optional[Union[Path, str]]
         Output path for pupil model plot.
-    out_txt : Optional[Union[Path, str]]
-        Output path for pupil model text file.
     out_fits : Optional[Union[Path, str]]
         Output path for pupil model FITS file.
     return_tmp:
@@ -219,14 +215,7 @@ def generate_pupil_model(
         if hex_grid:
             tmp = rotate(tmp, rot_ang, reshape=False, order=1)
 
-    if out_txt is not None:
-        np.savetxt(out_txt, model, fmt="%+.10e %+.10e %.2f")
-        kpi_args = dict(fname=out_txt)
-    else:
-        kpi_args = dict(array=model)
-
-    kpi_args = {**kpi_args, **dict(bmax=bmax, hexa=hex_border)}
-    KPI = kpi.KPI(**kpi_args)
+    KPI = kpi.KPI(array=model, bmax=bmax, hexa=hex_border)
 
     if min_red > 0:
         KPI.filter_baselines(KPI.RED > min_red)
