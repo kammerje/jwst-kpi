@@ -87,8 +87,8 @@ def create_hex_model(
 
 def generate_pupil_model(
     input_mask: Union[Path, str],
-    step: float,
-    tmin: float,
+    tmin: float = 0.7,
+    step: Optional[float] = None,
     nrings: int = 3,
     binary: bool = False,
     symmetrize: bool = False,
@@ -182,6 +182,8 @@ def generate_pupil_model(
     if hex_grid:
         model, tmp = create_hex_model(aper, pxsc, ns=nrings, threshold=tmin)
     else:
+        if step is None:
+            raise TypeError("step must be provided for square grid (hex_grid=False).")
         model = create_discrete_model(aper, pxsc, step, binary=binary, tmin=tmin)
 
     if symmetrize:
