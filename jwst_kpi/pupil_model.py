@@ -215,7 +215,7 @@ def generate_pupil_model(
         if hex_grid:
             tmp = rotate(tmp, rot_ang, reshape=False, order=1)
 
-    KPI = kpi.KPI(array=model, bmax=bmax, hexa=hex_border)
+    KPI = kpi.KPI(array=model, bmax=bmax, hexa=hex_border, pupil_mask=aper, pupil_scale=pxsc)
 
     if min_red > 0:
         KPI.filter_baselines(KPI.RED > min_red)
