@@ -234,6 +234,8 @@ class ExtractKerphaseStep(Step):
                 or i in good_frames
                 or (nf - i) * (-1) in good_frames
             ):
+                # NOTE: Xara's new version gives KPDT a shape (nframes, nkp) when extracting single frame
+                # No extra 2nd axis like in previous version
                 temp = KPO.extract_KPD_single_frame(
                     data_extract[i],
                     PSCALE,
@@ -380,10 +382,11 @@ class ExtractKerphaseStep(Step):
         # hdu_uvp.header["TTYPE3"] = ("RED", "Baseline redundancy (int)")
         output_models.ker_mat = KPO.kpi.KPM
         output_models.blm_mat = np.diag(KPO.kpi.RED).dot(KPO.kpi.TFM)
+        # TODO: Double check this with latest version
         # NOTE: The dimension is [NF, NWL(1), NKP] already
         # because extraction is done in an external loop with xara
         # (the shape is different from typical "extract_single_cube" output)
-        output_models.kp_data = np.array(KPO.KPDT)  # rad
+        output_models.kp_data = np.array(KPO.KPDT)[:, np.newaxis, :]  # rad
         output_models.kp_sigm = kpsig[:, np.newaxis, :]  # rad
         output_models.kp_cov = kpcov[:, np.newaxis, :]  # rad^2
         wave_arr = np.array([wave])
@@ -394,8 +397,8 @@ class ExtractKerphaseStep(Step):
             [output_models.meta.wcsinfo.roll_ref + V3I_YANG] * data_good.shape[0]
         )  # deg
         temp = np.zeros((2, data_good.shape[0], 1, output_models.ker_mat.shape[1]))
-        temp[0] = np.real(np.array(KPO.CVIS))
-        temp[1] = np.imag(np.array(KPO.CVIS))
+        temp[0] = np.real(np.array(KPO.CVIS)[:, np.newaxis, :])
+        temp[1] = np.imag(np.array(KPO.CVIS)[:, np.newaxis, :])
         output_models.cvis_data = temp
         output_models.meta.cal_step_kpi.extract = "COMPLETE"
         if do_recenter:
