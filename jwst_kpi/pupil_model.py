@@ -13,7 +13,6 @@ from xaosim.pupil import hex_mirror_model, uniform_hex
 from jwst_kpi import PUPIL_DIR
 
 
-
 def create_hex_model(
     aper: np.ndarray,
     pscale: float,
@@ -55,7 +54,7 @@ def create_hex_model(
     # x, y coordinates for the discrete model
     coords = hex_mirror_model(2, ns, sdiam, fill=False)
     coords = np.unique(np.round(coords, 3), axis=1)
-    nc = coords.shape[1] # number of potential subaperture coordinates
+    nc = coords.shape[1]  # number of potential subaperture coordinates
 
     # appending a column for the transmission
     tcoords = np.ones((3, nc))
@@ -67,7 +66,6 @@ def create_hex_model(
     tmp = aper.copy()
 
     for ii in range(nc):
-
         # get coords of one subaperture in the grid
         sx, sy = np.round(tcoords[:2, ii] / pscale).astype(int)
 
@@ -89,13 +87,13 @@ def create_hex_model(
 
 def generate_pupil_model(
     input_mask: Union[Path, str],
-    step: float,
-    tmin: float,
+    tmin: float = 0.7,
+    step: Optional[float] = None,
     nrings: int = 3,
     binary: bool = False,
     symmetrize: bool = False,
-    pad: int = 50,
-    cut: float = 0.1,
+    pad: int = 70,
+    symmetrize_cut: float = 0.1,
     rot_ang: float = 0.0,
     bmax: float = None,
     min_red: float = 10.0,
@@ -103,9 +101,10 @@ def generate_pupil_model(
     hex_grid: bool = False,
     show: bool = True,
     out_plot: Optional[Union[Path, str]] = None,
-    out_txt: Optional[Union[Path, str]] = None,
     out_fits: Optional[Union[Path, str]] = None,
-):
+    return_tmp: bool = False,
+    cut: Optional[float] = None,
+) -> kpi.KPI | tuple[kpi.KPI, np.ndarray]:
     """
     Generate pupil model for a set of parameters with XARA.
 
@@ -128,8 +127,9 @@ def generate_pupil_model(
     symmetrize : bool
         Symmetrize the model along the horizontal direction.
     pad : int
-        Pad the input FITS mask.
-    cut : float
+        Pad the input FITS mask. Required for hexagonal grid to avoid wrapping the transmission calculation.
+        70 is the minimum required value for ns=1. 50 should be enough for ns=3
+    symmetrize_cut : float
         Cutoff distance when symmetrizing model (must be < step size).
     rot_ang : float
         Rotation angle for the model.
@@ -145,10 +145,10 @@ def generate_pupil_model(
         Show pupil model and uv-coverage.
     out_plot : Optional[Union[Path, str]]
         Output path for pupil model plot.
-    out_txt : Optional[Union[Path, str]]
-        Output path for pupil model text file.
     out_fits : Optional[Union[Path, str]]
         Output path for pupil model FITS file.
+    return_tmp:
+        Return the temporary transmission mask used to generate the model
 
     Returns
     -------
@@ -157,7 +157,9 @@ def generate_pupil_model(
     """
 
     pupil_dir = Path(PUPIL_DIR)
-    available_masks = [f.stem.split("_")[1] for f in pupil_dir.iterdir() if f.stem.startswith("MASK")]
+    available_masks = [
+        f.stem.split("_")[1] for f in pupil_dir.iterdir() if f.stem.startswith("MASK")
+    ]
     mask_found = input_mask in available_masks
     if mask_found:
         input_mask_path = pupil_dir / f"MASK_{input_mask}.fits"
@@ -165,45 +167,55 @@ def generate_pupil_model(
         input_mask_path = Path(input_mask)
         mask_found = input_mask_path.is_file()
     if not mask_found:
-        raise ValueError(f"Input FITS mask must be one of: {available_masks} or a valid full path.")
+        raise ValueError(
+            f"Input FITS mask must be one of: {available_masks} or a valid full path."
+        )
 
     with pyfits.open(input_mask_path) as hdul:
         aper = hdul[0].data
-        pxsc = hdul[0].header["PUPLSCAL"] # m; pupil scale
+        pxsc = hdul[0].header["PUPLSCAL"]  # m; pupil scale
     aper = aper[:-1, :-1]
     aper = shift(aper, (-0.5, -0.5))
 
     if pad > 0:
-        # TODO: Check that default padding is sufficient even for ns=1
         aper = np.pad(aper, ((pad, pad), (pad, pad)))
 
     if hex_grid:
         model, tmp = create_hex_model(aper, pxsc, ns=nrings, threshold=tmin)
     else:
+        if step is None:
+            raise TypeError("step must be provided for square grid (hex_grid=False).")
         model = create_discrete_model(aper, pxsc, step, binary=binary, tmin=tmin)
+        tmp = None
+
+    if cut is not None:
+        warnings.warn(
+            "cut has been replaced by symmetrize_cut and will be removed in the future."
+            " Setting symmetrize_cut to cut value.",
+            DeprecationWarning,
+        )
+        symmetrize_cut = cut
 
     if symmetrize:
-        # TODO: Should this check against cut instead?
-        if step <= 0.1:
-            warnings.warn(f"Symmetrize cut parameter ({cut}) should be smaller than step ({step})")
-        model = symetrizes_model(model, cut=cut)
+        if step <= cut:
+            warnings.warn(
+                f"Symmetrize cut parameter ({symmetrize_cut}) should be smaller than step ({step})",
+                RuntimeWarning,
+            )
+        model = symetrizes_model(model, cut=symmetrize_cut)
 
-    if np.abs(rot_ang) > 0.:
-        th0 = rot_ang * np.pi / 180. # rad; rotation angle
-        rot_mat = np.array([[np.cos(th0), -np.sin(th0)],
-                            [np.sin(th0),  np.cos(th0)]]) # rotation matrix
-        model[:, :2] = model[:, :2].dot(rot_mat) # rotated model = model * rotation matrix
+    if np.abs(rot_ang) > 0.0:
+        th0 = rot_ang * np.pi / 180.0  # rad; rotation angle
+        rot_mat = np.array(
+            [[np.cos(th0), -np.sin(th0)], [np.sin(th0), np.cos(th0)]]
+        )  # rotation matrix
+        model[:, :2] = model[:, :2].dot(
+            rot_mat
+        )  # rotated model = model * rotation matrix
         if hex_grid:
             tmp = rotate(tmp, rot_ang, reshape=False, order=1)
 
-    if out_txt is not None:
-        np.savetxt(out_txt, model, fmt="%+.10e %+.10e %.2f")
-        kpi_args = dict(fname=out_txt)
-    else:
-        kpi_args = dict(array=model)
-
-    kpi_args = {**kpi_args, **dict(bmax=bmax, hexa=hex_border)}
-    KPI = kpi.KPI(**kpi_args)
+    KPI = kpi.KPI(array=model, bmax=bmax, hexa=hex_border, pupil_mask=aper, pupil_scale=pxsc)
 
     if min_red > 0:
         KPI.filter_baselines(KPI.RED > min_red)
@@ -230,4 +242,7 @@ def generate_pupil_model(
             plt.show(block=True)
         plt.close()
 
-    return KPI
+    if return_tmp:
+        return KPI, tmp
+    else:
+        return KPI
