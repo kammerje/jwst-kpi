@@ -17,6 +17,50 @@ from .recenter_frames_plots import plot_recenter
 PUPIL_DIR = pupil_data.__path__[0]
 
 
+def recenter_iter_xara(
+    data,
+    niter=10,
+    **kwargs,
+):
+    """Recenter frame iteratively with xara
+
+    Simple calls xara.core.recenter() niter times.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        Image to be recentered
+    niter : int
+        Number of iterations to perform
+    **kwargs
+        Any other keyword argument is passed to xara.core.recenter()
+
+    Returns
+    -------
+    Returns the centered image as an np.darray, as well as the total dx and dy shifts if `return_center=True`.
+    """
+    return_center = kwargs.get("return_center", False)
+    if return_center:
+        dx_tot, dy_tot = 0, 0
+
+    data_cen = data.copy()
+    for _ in range(niter):
+        temp = core.recenter(
+            data_cen,
+            **kwargs,
+        )
+        if return_center:
+            data_cen = temp[0]
+            dx_tot += temp[1]
+            dy_tot += temp[2]
+        else:
+            data_cen = temp
+    if return_center:
+        return data_cen, dx_tot, dy_tot
+    else:
+        return data_cen
+
+
 class RecenterFramesStep(Step):
     """
     Recenter frames.
@@ -63,6 +107,7 @@ class RecenterFramesStep(Step):
         verbose = boolean(default=False)
         show_plots = boolean(default=False)
         good_frames = int_list(default=None)
+        niter = integer(default=1)
     """
 
     def process(self, input_data):
@@ -163,8 +208,8 @@ class RecenterFramesStep(Step):
                 wave = wave_miri[FILTER] * 1e-6  # m
                 weff = weff_miri[FILTER] * 1e-6  # m
 
+            # TODO: Can this be remove or is it still needede
             # print("Rotating pupil model by %.2f deg (counter-clockwise)" % V3I_YANG)
-
             # # Rotate pupil model.
             # theta = np.deg2rad(V3I_YANG) # rad
             # rot = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
@@ -191,8 +236,6 @@ class RecenterFramesStep(Step):
                 ID="",
             )
             m2pix = core.mas2rad(PSCALE) * sx / wave
-            # KPO.kpi.plot_pupil_and_uv()
-            # plt.show()
 
         else:
             KPO = None
@@ -212,8 +255,9 @@ class RecenterFramesStep(Step):
                     or i in good_frames
                     or (nf - i) * (-1) in good_frames
                 ):
-                    temp = core.recenter(
+                    temp = recenter_iter_xara(
                         data[i],
+                        niter=self.niter,
                         algo=self.method,
                         subpix=True,
                         between=False,
