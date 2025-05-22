@@ -3,7 +3,8 @@ from pathlib import Path
 
 import numpy as np
 from scipy.ndimage import rotate, shift
-from xara import create_discrete_model, kpi, symetrizes_model
+from xara.core import create_discrete_model, symetrizes_model
+from xara import kpi
 import matplotlib.pyplot as plt
 import astropy.io.fits as pyfits
 import matplotlib.cm as cm
