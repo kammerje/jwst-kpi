@@ -12,7 +12,8 @@ import numpy as np
 from astropy.io import fits
 from scipy.ndimage import rotate, shift
 from xaosim.pupil import hex_mirror_model, uniform_hex
-from xara import create_discrete_model, kpi, symetrizes_model
+from xara import kpi
+from xara.core import create_discrete_model, symetrizes_model
 
 from jwst_kpi import PUPIL_DIR
 
