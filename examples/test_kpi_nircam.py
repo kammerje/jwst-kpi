@@ -3,7 +3,7 @@ from __future__ import division
 # =============================================================================
 # IMPORTS
 # =============================================================================
-import os
+from pathlib import Path
 
 import matplotlib
 
@@ -16,8 +16,8 @@ matplotlib.rcParams.update({"font.size": 14})
 # MAIN
 # =============================================================================
 
-output_dir = "example_outputs"
-os.makedirs(output_dir, exist_ok=True)
+output_dir = Path(__file__).parent / "example_outputs"
+output_dir.mkdir(exist_ok=True)
 
 # Initialize stage 3 pipeline.
 pipe3 = Kpi3Pipeline()
