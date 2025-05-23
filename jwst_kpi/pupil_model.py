@@ -2,7 +2,7 @@ import warnings
 from pathlib import Path
 from typing import Optional, Sequence, Tuple, Union
 
-import astropy.io.fits as pyfits
+import astropy.io.fits as fits
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import numpy as np
@@ -174,7 +174,7 @@ def generate_pupil_model(
             f"Input FITS mask must be one of: {available_masks} or a valid full path."
         )
 
-    with pyfits.open(input_mask_path) as hdul:
+    with fits.open(input_mask_path) as hdul:
         aper = hdul[0].data
         pxsc = hdul[0].header["PUPLSCAL"]  # m; pupil scale
     aper = aper[:-1, :-1]
