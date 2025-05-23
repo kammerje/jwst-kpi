@@ -198,7 +198,7 @@ def generate_pupil_model(
         symmetrize_cut = cut
 
     if symmetrize:
-        if step <= cut:
+        if step <= symmetrize_cut:
             warnings.warn(
                 f"Symmetrize cut parameter ({symmetrize_cut}) should be smaller than step ({step})",
                 RuntimeWarning,
