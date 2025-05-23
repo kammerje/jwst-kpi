@@ -230,24 +230,77 @@ def generate_pupil_model(
         if not hex_grid:
             KPI.plot_pupil_and_uv(cmap="inferno", marker=".")
         else:
-            # TODO: Add UV coverge for hex model as well
-            mmax = (aper.shape[0] * pxsc) / 2
-            plt.figure(figsize=(6.4, 4.8))
-            plt.clf()
-            plt.imshow(tmp, extent=(-mmax, mmax, -mmax, mmax), cmap=cm.gray)
-            plt.scatter(model[:, 0], model[:, 1], c=model[:, 2], s=20)
-            cb = plt.colorbar()
-            cb.set_label("Transmission", rotation=270, labelpad=20)
-            plt.xlabel("X [m]")
-            plt.ylabel("Y [m]")
+            fig = plt.figure(figsize=(12.8, 4.8))
+            plot_hex_model(KPI, aper=True, fig=fig)
             plt.tight_layout()
-        if out_plot is not None:
-            plt.savefig(out_plot)
-        if show:
-            plt.show(block=True)
-        plt.close()
+            if out_plot is not None:
+                plt.savefig(out_plot)
+            if show:
+                plt.show(block=True)
+            plt.close()
+            # TODO: Add UV coverge for hex model as well
 
     if return_tmp:
         return KPI, tmp
     else:
         return KPI
+
+
+def plot_hex_model_xy(
+    mykpi: kpi.KPI,
+    aper: np.ndarray | None = None,
+    tmp: np.ndarray | None = None,
+    fig: Figure | None = None,
+    ax: Axes | None = None,
+) -> tuple[Figure, Axes]:
+    fig = fig or plt.gcf()
+    ax = ax or plt.gca()
+    if aper is not None:
+        mmax = (aper.shape[0] * mykpi.pupil_scale) / 2
+    if tmp is not None:
+        ax.imshow(tmp, extent=(-mmax, mmax, -mmax, mmax), cmap=cm.gray)
+    model = mykpi.VAC
+    tmap = ax.scatter(model[:, 0], model[:, 1], c=model[:, 2], s=20, marker="h")
+    cb = fig.colorbar(tmap)
+    cb.set_label("Transmission", labelpad=20)
+    ax.set_xlabel("X [m]")
+    ax.set_ylabel("Y [m]")
+    return fig, ax
+
+
+def plot_hex_model_uv(
+    mykpi: kpi.KPI,
+    fig: Figure | None = None,
+    ax: Axes | None = None,
+) -> tuple[Figure, Axes]:
+    fig = fig or plt.gcf()
+    ax = ax or plt.gca()
+    model = mykpi.UVC
+    red = mykpi.RED
+    tmap = ax.scatter(model[:, 0], model[:, 1], c=mykpi.RED, s=20, marker="h")
+    ax.scatter(-model[:, 0], -model[:, 1], c=mykpi.RED, s=20, marker="h")
+    cb = fig.colorbar(tmap)
+    cb.set_label("Redundancy", labelpad=20)
+    ax.set_xlabel("U [m]")
+    ax.set_ylabel("V [m]")
+    return fig, ax
+
+
+def plot_hex_model(
+    mykpi: kpi.KPI,
+    fig: Figure | None = None,
+    axs: Sequence[Axes] | None = None,
+) -> tuple[Figure, Sequence[Axes] | Axes]:
+    if fig is None:
+        if axs is None:
+            fig, axs = plt.subplots(1, 2, figsize=(10, 5))
+        else:
+            fig = plt.gcf()
+    if axs is None:
+        axs = fig.get_axes()
+        assert len(axs) == 2, (
+            "Fig must have 2 axes or axes must be passed as an argument"
+        )
+    plot_hex_model_xy(mykpi, ax=axs[0])
+    plot_hex_model_uv(mykpi, ax=axs[1])
+    return fig, axs
