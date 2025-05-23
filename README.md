@@ -1,10 +1,10 @@
-# JWST stage 3 pipeline for kernel phase imaging.
+# JWST stage 3 pipeline for kernel phase imaging
 
 Authors: Jens Kammerer, Thomas Vandal, Katherine Thibault, Frantz Martinache
 
 Supported instruments: NIRCam, NIRISS, MIRI
 
-This package provides a pipeline to extract kernel phases from JWST data. The code aims to replicate the interface of the official JWST data reduction pipeline to provide a custom stage 3 kernel phase pipeline that outputs [KPFITS](https://ui.adsabs.harvard.edu/abs/2022arXiv221017528K/abstract) files. The pipeline is based on the XARA[^1] package and uses stage 2 calibrated ("cal" or "calints") products from the official JWST data reduction pipeline. 
+This package provides a pipeline to extract kernel phases from JWST data. The code aims to replicate the interface of the official JWST data reduction pipeline to provide a custom stage 3 kernel phase pipeline that outputs [KPFITS](https://ui.adsabs.harvard.edu/abs/2022arXiv221017528K/abstract) files. The pipeline is based on the XARA[^1] package and uses stage 2 calibrated ("cal" or "calints") products from the official JWST data reduction pipeline.
 
 ## Installation
 
@@ -60,6 +60,7 @@ feel free to open an Issue or a PR!
 ### News
 
 The most recent major update brings new functionality and simplified usage:
+
 * Both 2D cal and 3D calints data can now be processed.
 * There is a new trim frames step. It is possible to specify the center and the size of the trimmed frames. With this new step, the pipeline is now running the steps in the following order: trim frames, fix bad pixels, recenter frames, window frames, extract kerphase, empirical uncertainties.
 * It is now possible to provide a list of good frames and extract the kernel phase only from those.
@@ -68,4 +69,28 @@ The most recent major update brings new functionality and simplified usage:
 * Improved file outputs.
 * Simplification of the code by always transforming input data to 3D calints data.
 
-[^1]: The main XARA version is hosted here: https://github.com/fmartinache/xara. At the time of writing this, the pipeline uses a forked version of XARA (https://github.com/kammerje/xara/tree/develop) that implements new functionality required for the JWST pipeline.
+## Development
+
+### Installing for development
+
+To install for development, use the [instructions above](#install-jwst-kpi) to clone the repository and install the package along with its development dependencies:
+
+```python
+python -m pip install -U -e "[.dev]"
+```
+
+### Tests
+
+We are progressively adding unit tests.
+They can be run with [pytest](https://docs.pytest.org/en/stable/), which should be installed as part of the [development dependencies](#installing-for-development):
+
+```bash
+pytest tests
+```
+
+Some tests require test data as input or for comparison purposes.
+These files are large so they require [git lfs](https://git-lfs.com/).
+After installing git lfs, the repository can be cloned following the [development install instructions](#installing-for-development).
+
+[^1]: The main XARA version is hosted here: <https://github.com/fmartinache/xara>. At the time of writing this, the pipeline uses a forked version of XARA (<https://github.com/kammerje/xara/tree/develop>) that implements new functionality required for the JWST pipeline.
+
