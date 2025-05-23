@@ -1,3 +1,44 @@
 [build-system]
 requires = ["setuptools", "wheel", "setuptools_scm"]
-build-backend = 'setuptools.build_meta'
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jwst_kpi"
+description = "Kernel Phase Pipeline for JWST"
+readme = "README.md"
+authors = [{ name = "Jens Kammerer" },]
+license = "GPL-3.0-only"
+dependencies = [
+    "setuptools",
+    "numpy",
+    "scipy",
+    "matplotlib",
+    "astropy",
+    "jwst",
+    "asdf",
+    "astroquery",
+    "poppy",
+    "xara @ git+https://github.com/kammerje/xara.git@develop",
+]
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/kammerje/jwst-kpi"
+Issues = "https://github.com/kammerje/jwst-kpi/issues"
+
+[project.optional-dependencies]
+dev = [
+    "tqdm",
+    "webbpsf",
+    "fouriever @ git+https://github.com/kammerje/fouriever.git",
+    "xaosim @ git+https://github.com/fmartinache/xaosim.git",
+    "pytest",
+]
+
+[project.entry-points."asdf.resource_mappings"]
+jwst_kpi_datamodel = "jwst_kpi.datamodels.integration:get_resource_mappings"
+
+[tool.setuptools.package-data]
+"*" = ["*.yaml"]
+
+[tool.setuptools_scm]
