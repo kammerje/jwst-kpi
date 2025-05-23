@@ -45,3 +45,5 @@ def test_nircam_clear(base_args):
     norm = np.linalg.norm(kpi_pkg.KPM, axis=1)
     kpm_pkg_norm = np.divide(kpi_pkg.KPM.T, norm).T
     np.testing.assert_allclose(kpi_test.KPM, kpm_pkg_norm)
+    # The latest version has a pupil mask saved
+    assert kpi_pkg.pupil_mask is not None
