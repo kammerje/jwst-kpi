@@ -1,15 +1,17 @@
-from typing import Optional, Union, Tuple
+import warnings
 from pathlib import Path
+from typing import Optional, Sequence, Tuple, Union
 
-import numpy as np
-from scipy.ndimage import rotate, shift
-from xara.core import create_discrete_model, symetrizes_model
-from xara import kpi
-import matplotlib.pyplot as plt
 import astropy.io.fits as pyfits
 import matplotlib.cm as cm
-import warnings
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
+from scipy.ndimage import rotate, shift
 from xaosim.pupil import hex_mirror_model, uniform_hex
+from xara import kpi
+from xara.core import create_discrete_model, symetrizes_model
 
 from jwst_kpi import PUPIL_DIR
 
@@ -216,7 +218,9 @@ def generate_pupil_model(
         if hex_grid:
             tmp = rotate(tmp, rot_ang, reshape=False, order=1)
 
-    KPI = kpi.KPI(array=model, bmax=bmax, hexa=hex_border, pupil_mask=aper, pupil_scale=pxsc)
+    KPI = kpi.KPI(
+        array=model, bmax=bmax, hexa=hex_border, pupil_mask=aper, pupil_scale=pxsc
+    )
 
     if min_red > 0:
         KPI.filter_baselines(KPI.RED > min_red)
