@@ -284,12 +284,9 @@ class RecenterFramesStep(Step):
             output_models.dq_mod = input_models.dq_mod
         except AttributeError:
             self.log.warning("Could not pass bad pixel mask from BP step")
-        if is2d:
-            dx_arr = np.array([dx])  # pix
-            dy_arr = np.array([dy])  # pix
-        else:
-            dx_arr = np.array(dx)  # pix
-            dy_arr = np.array(dy)  # pix
+        dx_arr = np.array(dx)  # pix
+        dy_arr = np.array(dy)  # pix
+        # In recarray shape should be the length
         output_models.imshift = np.recarray(dx_arr.shape, output_models.imshift.dtype)
         output_models.imshift["XSHIFT"] = dx_arr
         output_models.imshift["YSHIFT"] = dy_arr
