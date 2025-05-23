@@ -154,7 +154,7 @@ class FixBadPixelsStep(Step):
         mask = np.isnan(data)
         for i in range(len(self.bad_bits)):
             if self.bad_bits[i] not in bad_bits_allowed:
-                raise UserWarning("Unknown data quality flag")
+                raise ValueError(f"Unknown data quality flag: {self.bad_bits[i]}. Supported values are {bad_bits_allowed}")
             else:
                 pxdq_flag = pxdq_flags[self.bad_bits[i]]
                 mask = mask | (pxdq & pxdq_flag == pxdq_flag)
