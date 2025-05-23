@@ -224,21 +224,25 @@ def generate_pupil_model(
 
     if min_red > 0:
         KPI.filter_baselines(KPI.RED > min_red)
-    KPI.package_as_fits(fname=out_fits)
+    hdul = KPI.package_as_fits()
+
+    if tmp is not None:
+        tmp_hdu = fits.ImageHDU(tmp)
+        tmp_hdu.name = "TMP"
+        hdul.append(tmp_hdu)
+        hdul.writeto(out_fits, overwrite=True)
 
     if show or out_plot is not None:
         if not hex_grid:
             KPI.plot_pupil_and_uv(cmap="inferno", marker=".")
         else:
-            fig = plt.figure(figsize=(12.8, 4.8))
-            plot_hex_model(KPI, aper=True, fig=fig)
-            plt.tight_layout()
+            fig, axs = plt.subplots(1, 2, figsize=(15, 5))
+            plot_hex_model(KPI, aper=aper, tmp=tmp, fig=fig, axs=axs)
             if out_plot is not None:
                 plt.savefig(out_plot)
             if show:
                 plt.show(block=True)
             plt.close()
-            # TODO: Add UV coverge for hex model as well
 
     if return_tmp:
         return KPI, tmp
@@ -288,6 +292,8 @@ def plot_hex_model_uv(
 
 def plot_hex_model(
     mykpi: kpi.KPI,
+    aper: np.ndarray | None = None,
+    tmp: np.ndarray | None = None,
     fig: Figure | None = None,
     axs: Sequence[Axes] | None = None,
 ) -> tuple[Figure, Sequence[Axes] | Axes]:
@@ -301,6 +307,6 @@ def plot_hex_model(
         assert len(axs) == 2, (
             "Fig must have 2 axes or axes must be passed as an argument"
         )
-    plot_hex_model_xy(mykpi, ax=axs[0])
+    plot_hex_model_xy(mykpi, ax=axs[0], aper=aper, tmp=tmp)
     plot_hex_model_uv(mykpi, ax=axs[1])
     return fig, axs
