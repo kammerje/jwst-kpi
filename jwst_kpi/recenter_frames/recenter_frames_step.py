@@ -112,7 +112,7 @@ class RecenterFramesStep(Step):
 
     def process(self, input_data):
 
-        self.log.info("--> Running recenter frames step...")
+        self.log.info(f"--> Running recenter frames step with {self.niter} iterations...")
 
         good_frames = self.good_frames
 
