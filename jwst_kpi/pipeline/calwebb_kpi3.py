@@ -93,11 +93,11 @@ class Kpi3Pipeline(Pipeline):
         input = datamodels.open(input_data)
 
         # NOTE: Skipped steps are skipped in their own run/process
-        input = self.trim_frames(input)
-        input = self.fix_bad_pixels(input)
+        input = self.trim_frames.run(input)
+        input = self.fix_bad_pixels.run(input)
         # TODO: Skip these two if extract is not skipped?
-        input = self.recenter_frames(input)
-        input = self.window_frames(input)
+        input = self.recenter_frames.run(input)
+        input = self.window_frames.run(input)
 
         if not self.recenter_frames.skip:
             self.extract_kerphase.recenter_method = self.recenter_frames.method
@@ -112,9 +112,9 @@ class Kpi3Pipeline(Pipeline):
             raise RuntimeError(
                 "There is a SCI-ORG FITS file extension although both the recentering and the windowing steps were skipped."
             )
-        input = self.extract_kerphase(input)
+        input = self.extract_kerphase.run(input)
 
-        input = self.empirical_uncertainties(input)
+        input = self.empirical_uncertainties.run(input)
 
         if not self.empirical_uncertainties.skip:
             self.suffix = "emp_kpfits"
