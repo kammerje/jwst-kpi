@@ -61,7 +61,7 @@ def plot_kerphase(data, KPO, m2pix, kpcor, kpsig, good_frames=None):
     )
     ww = np.argsort(KPO.kpi.BLEN)
     # ax[1, 0].plot(np.angle(KPO.CVIS[0][0, ww]))
-    temp = np.angle(np.array(KPO.CVIS))
+    temp = np.angle(np.array(KPO.CVIS)[:, np.newaxis, :])
     medfp = np.median(temp, axis=(0, 1))
     minfp = np.min(temp, axis=(0, 1))
     maxfp = np.max(temp, axis=(0, 1))
@@ -90,7 +90,7 @@ def plot_kerphase(data, KPO, m2pix, kpcor, kpsig, good_frames=None):
     #     KPO.KPDT[0][0, :],
     #     color=colors[0],
     # )
-    temp = np.array(KPO.KPDT)
+    temp = np.array(KPO.KPDT)[:, np.newaxis, :]
     medkp = np.median(temp, axis=(0, 1))
     minkp = np.min(temp, axis=(0, 1))
     maxkp = np.max(temp, axis=(0, 1))

@@ -1,0 +1,7 @@
+tests/data/NIRISS/CPD-67-607/jw01093011001_03103_00001_nis_calints.fits filter=lfs diff=lfs merge=lfs -text
+tests/data/NIRISS/CPD-67-607/jw01093011001_03103_00001_nis_emp_kpfits.fits filter=lfs diff=lfs merge=lfs -text
+tests/data/NIRISS/CPD-67-607/jw01093011001_03103_00001_nis_extractkerphasestep_kpfits.fits filter=lfs diff=lfs merge=lfs -text
+tests/data/NIRISS/CPD-67-607/jw01093011001_03103_00001_nis_fixbadpixelsstep.fits filter=lfs diff=lfs merge=lfs -text
+tests/data/NIRISS/CPD-67-607/jw01093011001_03103_00001_nis_recenterframesstep.fits filter=lfs diff=lfs merge=lfs -text
+tests/data/NIRISS/CPD-67-607/jw01093011001_03103_00001_nis_trimframesstep.fits filter=lfs diff=lfs merge=lfs -text
+tests/data/NIRISS/CPD-67-607/jw01093011001_03103_00001_nis_windowframesstep.fits filter=lfs diff=lfs merge=lfs -text
