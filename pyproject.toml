@@ -18,7 +18,7 @@ dependencies = [
     "asdf",
     "astroquery",
     "poppy",
-    "xara @ git+https://github.com/kammerje/xara.git@develop",
+    "xara @ git+https://github.com/fmartinache/xara.git",
 ]
 dynamic = ["version"]
 
