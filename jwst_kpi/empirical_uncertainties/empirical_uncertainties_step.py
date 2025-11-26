@@ -81,10 +81,26 @@ class EmpiricalUncertaintiesStep(Step):
             for j in range(nf):
                 invcov += [np.linalg.inv(kpcov[j, i])]
                 invcovdat += [invcov[-1].dot(kpdat[j, i])]
-            wmcov[0, i] = np.linalg.inv(np.sum(np.array(invcov), axis=0))
+            invcov = np.array(invcov)
+            invcovdat = np.array(invcovdat)
+            # HACK: test
+            invcovdat_arr = np.array(invcovdat)
+            ics = invcovdat_arr.std(axis=1)
+            mad = np.median(np.abs(ics - np.median(ics)))
+            nmad = np.abs((ics - np.median(ics)) / mad)
+            if (nmad > 100).any():  # Empirical aribtrary threshold
+                nmad_mask = nmad <= 100
+                invcov = invcov[nmad_mask]
+                invcovdat = invcovdat[nmad_mask]
+                nf_i = nmad_mask.sum()
+                kpdat_i = kpdat[nmad_mask, i]
+            else:
+                nf_i = nf
+                kpdat_i = kpdat[:, i]
+            wmcov[0, i] = np.linalg.inv(np.sum(invcov, axis=0))
             wmsig[0, i] = np.sqrt(np.diag(wmcov[0, i]))
-            wmdat[0, i] = wmcov[0, i].dot(np.sum(np.array(invcovdat), axis=0))
-            emsig[0, i] = np.std(kpdat[:, i], axis=0) / np.sqrt(nf)
+            wmdat[0, i] = wmcov[0, i].dot(np.sum(invcovdat, axis=0))
+            emsig[0, i] = np.std(kpdat_i, axis=0) / np.sqrt(nf_i)
             wmcor = np.true_divide(
                 wmcov[0, i], wmsig[0, i][:, None] * wmsig[0, i][None, :]
             )
@@ -92,7 +108,7 @@ class EmpiricalUncertaintiesStep(Step):
                 wmcor, emsig[0, i][:, None] * emsig[0, i][None, :]
             )
             emcor[0, i] = wmcor.copy()
-            emcov_sample[0, i] = np.cov(kpdat[:, i].T)
+            emcov_sample[0, i] = np.cov(kpdat_i.T)
             emsig_sample[0, i] = np.sqrt(np.diag(emcov_sample[0, i]))
             emcor_sample[0, i] = np.true_divide(
                 emcov_sample[0, i],
