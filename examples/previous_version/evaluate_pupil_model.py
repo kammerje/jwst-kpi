@@ -49,7 +49,7 @@ for i in range(data.shape[0]):
 
 # %%
 # Put CVIS in an array (list by default) and get mean values
-cvis = np.concatenate(KPO.CVIS)
+cvis = np.array(KPO.CVIS)
 fa = np.mean(np.abs(cvis), axis=0)
 fp = np.mean(np.angle(cvis), axis=0)
 bred = KPO.kpi.RED
