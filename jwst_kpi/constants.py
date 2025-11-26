@@ -1,11 +1,15 @@
 """
 Constants used throughout KPI pipeline
 """
-from astroquery.svo_fps import SvoFps
+
+import logging
+from jwst_kpi.utils import has_network_access, get_wave_local, get_wave_svo
+
+log = logging.getLogger(__name__)
+log.setLevel(logging.DEBUG)
 
 # Detector pixel scales.
-# TODO: assumes that NIRISS pixels are square but they are slightly
-#       rectangular.
+# TODO: assumes that NIRISS pixels are square but they are slightly rectangular.
 # https://jwst-docs.stsci.edu/jwst-near-infrared-camera/nircam-instrumentation/nircam-detector-overview
 # https://jwst-docs.stsci.edu/jwst-near-infrared-imager-and-slitless-spectrograph/niriss-instrumentation/niriss-detector-overview
 # https://jwst-docs.stsci.edu/jwst-mid-infrared-instrument/miri-instrumentation/miri-detector-overview
@@ -27,23 +31,17 @@ gain = {
     "MIRI": 4.0,  # e-/ADU
 }
 
-# Load the NIRCam, NIRISS, and MIRI filters from the SVO Filter Profile
-# Service.
-# http://svo2.cab.inta-csic.es/theory/fps/
-def get_wave(instrument: str):
-    wave = {}
-    weff = {}
-    filter_list = SvoFps.get_filter_list(facility="JWST", instrument=instrument.upper())
-    for i in range(len(filter_list)):
-        name = filter_list["filterID"][i]
-        name = name[name.rfind(".") + 1 :]
-        wave[name] = filter_list["WavelengthMean"][i] / 1e4  # micron
-        weff[name] = filter_list["WidthEff"][i] / 1e4  # micron
-    return wave, weff
 
-wave_nircam, weff_nircam = get_wave("NIRCAM")
-wave_niriss, weff_niriss = get_wave("NIRISS")
-wave_miri, weff_miri = get_wave("MIRI")
+if has_network_access():
+    wave_nircam, weff_nircam = get_wave_svo("NIRCAM")
+    wave_niriss, weff_niriss = get_wave_svo("NIRISS")
+    wave_miri, weff_miri = get_wave_svo("MIRI")
+else:
+    log.warning("No network access. Using local SVO files.")
+    wave_nircam, weff_nircam = get_wave_local("NIRCAM")
+    wave_niriss, weff_niriss = get_wave_local("NIRISS")
+    wave_miri, weff_miri = get_wave_local("MIRI")
+
 
 WRAD_DEFAULT = 24
 

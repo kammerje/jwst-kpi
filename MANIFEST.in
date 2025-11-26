@@ -1,1 +1,2 @@
 include jwst_kpi/pupil_data/
+include jwst_kpi/filter_data/
