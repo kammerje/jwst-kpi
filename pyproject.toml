@@ -39,6 +39,6 @@ dev = [
 jwst_kpi_datamodel = "jwst_kpi.datamodels.integration:get_resource_mappings"
 
 [tool.setuptools.package-data]
-"*" = ["*.yaml"]
+"*" = ["*.yaml", "*.json"]
 
 [tool.setuptools_scm]
