@@ -18,7 +18,7 @@ dependencies = [
     "asdf",
     "astroquery",
     "poppy",
-    "xara @ git+https://github.com/kammerje/xara.git@develop",
+    "xara @ git+https://github.com/fmartinache/xara.git",
 ]
 dynamic = ["version"]
 
@@ -39,6 +39,6 @@ dev = [
 jwst_kpi_datamodel = "jwst_kpi.datamodels.integration:get_resource_mappings"
 
 [tool.setuptools.package-data]
-"*" = ["*.yaml"]
+"*" = ["*.yaml", "*.json"]
 
 [tool.setuptools_scm]

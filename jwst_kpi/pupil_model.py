@@ -1,14 +1,17 @@
-from typing import Optional, Union, Tuple
-from pathlib import Path
-
-import numpy as np
-from scipy.ndimage import rotate, shift
-from xara import create_discrete_model, kpi, symetrizes_model
-import matplotlib.pyplot as plt
-import astropy.io.fits as pyfits
-import matplotlib.cm as cm
 import warnings
+from pathlib import Path
+from typing import Optional, Sequence, Tuple, Union
+
+import astropy.io.fits as fits
+import matplotlib.cm as cm
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
+from scipy.ndimage import rotate, shift
 from xaosim.pupil import hex_mirror_model, uniform_hex
+from xara import kpi
+from xara.core import create_discrete_model, symetrizes_model
 
 from jwst_kpi import PUPIL_DIR
 
@@ -171,7 +174,7 @@ def generate_pupil_model(
             f"Input FITS mask must be one of: {available_masks} or a valid full path."
         )
 
-    with pyfits.open(input_mask_path) as hdul:
+    with fits.open(input_mask_path) as hdul:
         aper = hdul[0].data
         pxsc = hdul[0].header["PUPLSCAL"]  # m; pupil scale
     aper = aper[:-1, :-1]
@@ -197,7 +200,7 @@ def generate_pupil_model(
         symmetrize_cut = cut
 
     if symmetrize:
-        if step <= cut:
+        if step <= symmetrize_cut:
             warnings.warn(
                 f"Symmetrize cut parameter ({symmetrize_cut}) should be smaller than step ({step})",
                 RuntimeWarning,
@@ -215,34 +218,95 @@ def generate_pupil_model(
         if hex_grid:
             tmp = rotate(tmp, rot_ang, reshape=False, order=1)
 
-    KPI = kpi.KPI(array=model, bmax=bmax, hexa=hex_border, pupil_mask=aper, pupil_scale=pxsc)
+    KPI = kpi.KPI(
+        array=model, bmax=bmax, hexa=hex_border, pupil_mask=aper, pupil_scale=pxsc
+    )
 
     if min_red > 0:
         KPI.filter_baselines(KPI.RED > min_red)
-    KPI.package_as_fits(fname=out_fits)
+    hdul = KPI.package_as_fits()
+
+    if tmp is not None:
+        tmp_hdu = fits.ImageHDU(tmp)
+        tmp_hdu.name = "TMP"
+        hdul.append(tmp_hdu)
+        hdul.writeto(out_fits, overwrite=True)
 
     if show or out_plot is not None:
         if not hex_grid:
             KPI.plot_pupil_and_uv(cmap="inferno", marker=".")
         else:
-            # TODO: Add UV coverge for hex model as well
-            mmax = (aper.shape[0] * pxsc) / 2
-            plt.figure(figsize=(6.4, 4.8))
-            plt.clf()
-            plt.imshow(tmp, extent=(-mmax, mmax, -mmax, mmax), cmap=cm.gray)
-            plt.scatter(model[:, 0], model[:, 1], c=model[:, 2], s=20)
-            cb = plt.colorbar()
-            cb.set_label("Transmission", rotation=270, labelpad=20)
-            plt.xlabel("X [m]")
-            plt.ylabel("Y [m]")
-            plt.tight_layout()
-        if out_plot is not None:
-            plt.savefig(out_plot)
-        if show:
-            plt.show(block=True)
-        plt.close()
+            fig, axs = plt.subplots(1, 2, figsize=(15, 5))
+            plot_hex_model(KPI, aper=aper, tmp=tmp, fig=fig, axs=axs)
+            if out_plot is not None:
+                plt.savefig(out_plot)
+            if show:
+                plt.show(block=True)
+            plt.close()
 
     if return_tmp:
         return KPI, tmp
     else:
         return KPI
+
+
+def plot_hex_model_xy(
+    mykpi: kpi.KPI,
+    aper: np.ndarray | None = None,
+    tmp: np.ndarray | None = None,
+    fig: Figure | None = None,
+    ax: Axes | None = None,
+) -> tuple[Figure, Axes]:
+    fig = fig or plt.gcf()
+    ax = ax or plt.gca()
+    if aper is not None:
+        mmax = (aper.shape[0] * mykpi.pupil_scale) / 2
+    if tmp is not None:
+        ax.imshow(tmp, extent=(-mmax, mmax, -mmax, mmax), cmap=cm.gray)
+    model = mykpi.VAC
+    tmap = ax.scatter(model[:, 0], model[:, 1], c=model[:, 2], s=20, marker="h")
+    cb = fig.colorbar(tmap)
+    cb.set_label("Transmission", labelpad=20)
+    ax.set_xlabel("X [m]")
+    ax.set_ylabel("Y [m]")
+    return fig, ax
+
+
+def plot_hex_model_uv(
+    mykpi: kpi.KPI,
+    fig: Figure | None = None,
+    ax: Axes | None = None,
+) -> tuple[Figure, Axes]:
+    fig = fig or plt.gcf()
+    ax = ax or plt.gca()
+    model = mykpi.UVC
+    red = mykpi.RED
+    tmap = ax.scatter(model[:, 0], model[:, 1], c=mykpi.RED, s=20, marker="h")
+    ax.scatter(-model[:, 0], -model[:, 1], c=mykpi.RED, s=20, marker="h")
+    cb = fig.colorbar(tmap)
+    cb.set_label("Redundancy", labelpad=20)
+    ax.set_xlabel("U [m]")
+    ax.set_ylabel("V [m]")
+    return fig, ax
+
+
+def plot_hex_model(
+    mykpi: kpi.KPI,
+    aper: np.ndarray | None = None,
+    tmp: np.ndarray | None = None,
+    fig: Figure | None = None,
+    axs: Sequence[Axes] | None = None,
+) -> tuple[Figure, Sequence[Axes] | Axes]:
+    if fig is None:
+        if axs is None:
+            fig, axs = plt.subplots(1, 2, figsize=(10, 5))
+        else:
+            fig = plt.gcf()
+    if axs is None:
+        axs = fig.get_axes()
+        assert len(axs) == 2, (
+            "Fig must have 2 axes or axes must be passed as an argument"
+        )
+    plot_hex_model_xy(mykpi, ax=axs[0], aper=aper, tmp=tmp)
+    plot_hex_model_uv(mykpi, ax=axs[1])
+    return fig, axs
