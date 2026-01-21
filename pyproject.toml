@@ -19,6 +19,7 @@ dependencies = [
     "astroquery",
     "poppy",
     "xara-astro @ git+https://github.com/fmartinache/xara.git",
+    "xaosim @ git+https://github.com/fmartinache/xaosim.git",
 ]
 dynamic = ["version"]
 
@@ -31,7 +32,6 @@ dev = [
     "tqdm",
     "webbpsf",
     "fouriever @ git+https://github.com/kammerje/fouriever.git",
-    "xaosim @ git+https://github.com/fmartinache/xaosim.git",
     "pytest",
 ]
 
