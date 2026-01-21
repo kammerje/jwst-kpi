@@ -262,7 +262,7 @@ def plot_hex_model_xy(
     if aper is not None:
         mmax = (aper.shape[0] * mykpi.pupil_scale) / 2
     if tmp is not None:
-        ax.imshow(tmp, extent=(-mmax, mmax, -mmax, mmax), cmap=cm.gray)
+        ax.imshow(tmp, extent=(-mmax, mmax, -mmax, mmax), cmap=cm.gray, origin="lower")
     model = mykpi.VAC
     tmap = ax.scatter(model[:, 0], model[:, 1], c=model[:, 2], s=20, marker="h")
     cb = fig.colorbar(tmap)
